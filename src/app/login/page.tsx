@@ -37,13 +37,15 @@ export default function LoginPage() {
           {/* Logo som bakgrunnsbilde — unngår overflow-problemer med img */}
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
             <div style={{
-              width: '100px',
-              height: '100px',
+              width: '110px',
+              height: '110px',
               borderRadius: '50%',
               border: '3px solid #FFD400',
-              backgroundImage: 'url(/logo.png)',
-              backgroundSize: 'cover',
+              backgroundImage: 'url(/logo-small.png)',
+              backgroundSize: 'contain',
+              backgroundRepeat: 'no-repeat',
               backgroundPosition: 'center',
+              backgroundColor: '#fff',
               flexShrink: 0,
             }} />
           </div>
