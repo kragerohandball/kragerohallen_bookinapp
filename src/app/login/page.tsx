@@ -33,7 +33,7 @@ export default function LoginPage() {
           <img
             src="/logo.png"
             alt="KIF Håndball"
-            style={{ width: '110px', height: '110px', borderRadius: '50%', objectFit: 'cover', marginBottom: '1rem' }}
+            style={{ width: '110px', height: '110px', borderRadius: '50%', objectFit: 'cover', marginBottom: '1rem', display: 'block', margin: '0 auto 1rem auto' }}
           />
           <h1 style={{ color: '#FFD400', fontSize: '2rem', fontWeight: 800, margin: 0 }}>Kragerøhallen</h1>
           <p style={{ color: '#888', marginTop: '0.4rem', fontSize: '0.9rem' }}>Bookingsystem – KIF Håndball</p>
