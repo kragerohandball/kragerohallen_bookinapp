@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic'
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth-options'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
 import { sendApprovalEmail, sendRejectionEmail } from '@/lib/email'
@@ -10,7 +11,7 @@ export async function PATCH(
   req: Request,
   { params }: { params: { id: string } }
 ) {
-  const session = await getServerSession()
+  const session = await getServerSession(authOptions)
   if (session?.user?.role !== 'ADMIN') {
     return NextResponse.json({ error: 'Ikke tilgang' }, { status: 403 })
   }
@@ -60,7 +61,7 @@ export async function DELETE(
   _req: Request,
   { params }: { params: { id: string } }
 ) {
-  const session = await getServerSession()
+  const session = await getServerSession(authOptions)
   if (session?.user?.role !== 'ADMIN') {
     return NextResponse.json({ error: 'Ikke tilgang' }, { status: 403 })
   }
