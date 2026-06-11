@@ -24,24 +24,52 @@ export default function LoginPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+    <div style={{
+      minHeight: '100vh',
+      backgroundColor: '#1a1a1a',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '1rem',
+    }}>
       <div style={{ width: '100%', maxWidth: '420px' }}>
 
-        {/* Logo og tittel */}
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/logo.png"
-            alt="KIF Håndball"
-            style={{ width: '110px', height: '110px', borderRadius: '50%', objectFit: 'cover', marginBottom: '1rem', display: 'block', margin: '0 auto 1rem auto' }}
-          />
+        {/* Tittel over kortet */}
+        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
           <h1 style={{ color: '#FFD400', fontSize: '2rem', fontWeight: 800, margin: 0 }}>Kragerøhallen</h1>
-          <p style={{ color: '#888', marginTop: '0.4rem', fontSize: '0.9rem' }}>Bookingsystem – KIF Håndball</p>
+          <p style={{ color: '#888', marginTop: '0.4rem', fontSize: '0.9rem', margin: '0.4rem 0 0' }}>Bookingsystem – KIF Håndball</p>
         </div>
 
         {/* Kortboks */}
-        <div style={{ backgroundColor: '#2a2a2a', borderRadius: '1rem', border: '1px solid rgba(255,212,0,0.2)', padding: '2rem' }}>
-          <h2 style={{ color: '#fff', fontSize: '1.2rem', fontWeight: 600, marginTop: 0, marginBottom: '1.5rem' }}>Logg inn</h2>
+        <div style={{
+          backgroundColor: '#2a2a2a',
+          borderRadius: '1rem',
+          border: '1px solid rgba(255,212,0,0.2)',
+          padding: '2rem',
+        }}>
+
+          {/* Logo øverst i kortet */}
+          <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+            <div style={{
+              width: '100px',
+              height: '100px',
+              borderRadius: '50%',
+              overflow: 'hidden',
+              display: 'inline-block',
+              border: '3px solid #FFD400',
+            }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/logo.png"
+                alt="KIF Håndball"
+                width={100}
+                height={100}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+              />
+            </div>
+          </div>
+
+          <h2 style={{ color: '#fff', fontSize: '1.2rem', fontWeight: 600, marginTop: 0, marginBottom: '1.5rem', textAlign: 'center' }}>Logg inn</h2>
 
           <form onSubmit={handleSubmit}>
             <div style={{ marginBottom: '1rem' }}>
@@ -52,7 +80,7 @@ export default function LoginPage() {
                 onChange={e => setEmail(e.target.value)}
                 required
                 placeholder="din@epost.no"
-                style={{ width: '100%', backgroundColor: '#1a1a1a', border: '1px solid #555', borderRadius: '0.5rem', padding: '0.6rem 0.75rem', color: '#fff', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none' }}
+                style={{ width: '100%', backgroundColor: '#1a1a1a', border: '1px solid #555', borderRadius: '0.5rem', padding: '0.6rem 0.75rem', color: '#fff', fontSize: '0.95rem', boxSizing: 'border-box' }}
               />
             </div>
 
@@ -63,7 +91,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 required
-                style={{ width: '100%', backgroundColor: '#1a1a1a', border: '1px solid #555', borderRadius: '0.5rem', padding: '0.6rem 0.75rem', color: '#fff', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none' }}
+                style={{ width: '100%', backgroundColor: '#1a1a1a', border: '1px solid #555', borderRadius: '0.5rem', padding: '0.6rem 0.75rem', color: '#fff', fontSize: '0.95rem', boxSizing: 'border-box' }}
               />
             </div>
 
