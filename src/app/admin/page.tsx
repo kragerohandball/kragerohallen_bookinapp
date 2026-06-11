@@ -76,8 +76,8 @@ export default function AdminPage() {
     const data = await res.json()
     if (res.ok) {
       if (action === 'approve') {
-        const data = await res.json()
-        setApprovedUser({ name: user.name, email: user.email, password: data.password })
+        const found = users.find(u => u.id === userId)
+        setApprovedUser({ name: found?.name ?? '', email: found?.email ?? '', password: data.password })
       } else {
         setMsg({ type: 'success', text: 'Bruker avvist.' })
       }
