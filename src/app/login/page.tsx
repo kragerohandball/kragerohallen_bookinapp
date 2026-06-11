@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -15,79 +16,77 @@ export default function LoginPage() {
     e.preventDefault()
     setError('')
     setLoading(true)
-
-    const res = await signIn('credentials', {
-      email,
-      password,
-      redirect: false,
-    })
-
+    const res = await signIn('credentials', { email, password, redirect: false })
     setLoading(false)
-
-    if (res?.error === 'PENDING') {
-      setError('Brukeren din venter på godkjenning av administrator.')
-    } else if (res?.error === 'REJECTED') {
-      setError('Tilgangen din er avvist. Kontakt administrator.')
-    } else if (res?.error) {
-      setError('Feil e-post eller passord.')
-    } else {
-      router.push('/booking')
-    }
+    if (res?.error === 'PENDING') setError('Brukeren din venter på godkjenning av administrator.')
+    else if (res?.error === 'REJECTED') setError('Tilgangen din er avvist. Kontakt administrator.')
+    else if (res?.error) setError('Feil e-post eller passord.')
+    else router.push('/booking')
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Kragerøhallen</h1>
-          <p className="text-gray-500 mt-1">Bookingsystem</p>
+    <div style={{ minHeight: '100vh', backgroundColor: '#1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+      <div style={{ width: '100%', maxWidth: '420px' }}>
+
+        {/* Logo og tittel */}
+        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <Image
+            src="/logo.png"
+            alt="KIF Håndball"
+            width={110}
+            height={110}
+            style={{ borderRadius: '50%', display: 'inline-block', marginBottom: '1rem' }}
+          />
+          <h1 style={{ color: '#FFD400', fontSize: '2rem', fontWeight: 800, margin: 0 }}>Kragerøhallen</h1>
+          <p style={{ color: '#888', marginTop: '0.4rem', fontSize: '0.9rem' }}>Bookingsystem – KIF Håndball</p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
-          <h2 className="text-xl font-semibold text-gray-800 mb-6">Logg inn</h2>
+        {/* Kortboks */}
+        <div style={{ backgroundColor: '#2a2a2a', borderRadius: '1rem', border: '1px solid rgba(255,212,0,0.2)', padding: '2rem' }}>
+          <h2 style={{ color: '#fff', fontSize: '1.2rem', fontWeight: 600, marginTop: 0, marginBottom: '1.5rem' }}>Logg inn</h2>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">E-post</label>
+          <form onSubmit={handleSubmit}>
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ display: 'block', color: '#ccc', fontSize: '0.85rem', fontWeight: 500, marginBottom: '0.4rem' }}>E-post</label>
               <input
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 required
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="din@epost.no"
+                style={{ width: '100%', backgroundColor: '#1a1a1a', border: '1px solid #555', borderRadius: '0.5rem', padding: '0.6rem 0.75rem', color: '#fff', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none' }}
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Passord</label>
+            <div style={{ marginBottom: '1.25rem' }}>
+              <label style={{ display: 'block', color: '#ccc', fontSize: '0.85rem', fontWeight: 500, marginBottom: '0.4rem' }}>Passord</label>
               <input
                 type="password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 required
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                style={{ width: '100%', backgroundColor: '#1a1a1a', border: '1px solid #555', borderRadius: '0.5rem', padding: '0.6rem 0.75rem', color: '#fff', fontSize: '0.95rem', boxSizing: 'border-box', outline: 'none' }}
               />
             </div>
 
             {error && (
-              <div className="bg-red-50 text-red-700 text-sm px-4 py-3 rounded-lg">{error}</div>
+              <div style={{ backgroundColor: 'rgba(180,40,40,0.3)', border: '1px solid #7f2020', color: '#fca5a5', borderRadius: '0.5rem', padding: '0.75rem', fontSize: '0.85rem', marginBottom: '1rem' }}>
+                {error}
+              </div>
             )}
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-medium py-2.5 rounded-lg transition-colors"
+              style={{ width: '100%', backgroundColor: loading ? 'rgba(255,212,0,0.4)' : '#FFD400', color: '#000', fontWeight: 700, fontSize: '1rem', padding: '0.7rem', borderRadius: '0.5rem', border: 'none', cursor: loading ? 'not-allowed' : 'pointer' }}
             >
               {loading ? 'Logger inn...' : 'Logg inn'}
             </button>
           </form>
 
-          <p className="text-center text-sm text-gray-500 mt-6">
+          <p style={{ textAlign: 'center', fontSize: '0.85rem', color: '#666', marginTop: '1.5rem', marginBottom: 0 }}>
             Ikke registrert?{' '}
-            <Link href="/register" className="text-blue-600 hover:underline font-medium">
-              Søk om tilgang
-            </Link>
+            <Link href="/register" style={{ color: '#FFD400', textDecoration: 'none', fontWeight: 600 }}>Søk om tilgang</Link>
           </p>
         </div>
       </div>
