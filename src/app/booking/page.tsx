@@ -154,10 +154,10 @@ export default function BookingPage() {
   }
 
   const slotColors: Record<string, string> = {
-    available: 'bg-green-900/40 hover:bg-green-900/60 text-green-300 cursor-pointer border-green-700',
-    booked: 'bg-red-900/40 text-red-400 cursor-not-allowed border-red-800',
-    blocked: 'bg-gray-700 text-gray-500 cursor-not-allowed border-gray-600',
-    past: 'bg-[#111] text-gray-600 cursor-not-allowed border-gray-700',
+    available: 'bg-green-100 hover:bg-green-200 text-green-800 cursor-pointer border-green-300',
+    booked: 'bg-red-100 text-red-700 cursor-not-allowed border-red-300',
+    blocked: 'bg-gray-200 text-gray-500 cursor-not-allowed border-gray-300',
+    past: 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200',
     selected: 'bg-[#FFD400] text-black cursor-pointer border-[#e6be00] font-bold',
   }
 
@@ -228,13 +228,13 @@ export default function BookingPage() {
             </section>
 
             {/* Time slots */}
-            <section>
+            <section className="bg-white rounded-xl border border-gray-200 p-4">
               <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">
                 Ledige tider — {new Date(selectedDate + 'T12:00:00').toLocaleDateString('nb-NO', { weekday: 'long', day: 'numeric', month: 'long' })}
               </h2>
 
               {loadingSlots ? (
-                <div className="text-gray-500 text-sm py-4">Laster...</div>
+                <div className="text-gray-400 text-sm py-4">Laster...</div>
               ) : (
                 <div className="grid grid-cols-7 sm:grid-cols-14 gap-1.5">
                   {TIME_SLOTS.map(hour => {
@@ -268,10 +268,10 @@ export default function BookingPage() {
 
               {/* Legend */}
               <div className="flex gap-4 mt-3 text-xs text-gray-500 flex-wrap">
-                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-green-900/60 border border-green-700 inline-block"></span>Ledig</span>
+                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-green-200 border border-green-300 inline-block"></span>Ledig</span>
                 <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-[#FFD400] inline-block"></span>Valgt</span>
-                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-red-900/40 border border-red-800 inline-block"></span>Opptatt</span>
-                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-gray-700 inline-block"></span>Blokkert</span>
+                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-red-100 border border-red-300 inline-block"></span>Opptatt</span>
+                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-gray-200 inline-block"></span>Blokkert</span>
               </div>
             </section>
 
