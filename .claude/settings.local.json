@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(ls /pkg/env/global/bin/ | head -20)",
+      "Skill(run)",
+      "Skill(run:*)",
+      "Bash(which node *)",
+      "Bash(defaults read *)",
+      "Bash(sw_vers)",
+      "Bash(git init *)",
+      "Bash(git add *)",
+      "Bash(git commit *)"
+    ]
+  }
+}
