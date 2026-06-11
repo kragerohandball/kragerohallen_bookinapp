@@ -58,9 +58,14 @@ export default function ChangePasswordPage() {
             </div>
           ) : (
             <>
-              <h2 className="text-xl font-semibold text-gray-800 mb-6">
+              <h2 className="text-xl font-semibold text-gray-800 mb-2">
                 Hei, {session?.user?.name}
               </h2>
+              {session?.user?.mustChangePassword && (
+                <div className="bg-blue-50 text-blue-700 text-sm px-4 py-3 rounded-lg mb-4">
+                  Velkommen! Du må bytte passord før du kan bruke bookingsystemet.
+                </div>
+              )}
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>

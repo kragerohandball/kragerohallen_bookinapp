@@ -27,16 +27,10 @@ export async function PATCH(
 
     await prisma.user.update({
       where: { id: params.id },
-      data: { status: 'APPROVED', password: hashed },
+      data: { status: 'APPROVED', password: hashed, mustChangePassword: true },
     })
 
-    try {
-      await sendApprovalEmail(user.email, user.name, plainPassword)
-    } catch {
-      // ignorer e-postfeil
-    }
-
-    return NextResponse.json({ ok: true })
+    return NextResponse.json({ ok: true, password: plainPassword })
   }
 
   if (action === 'reject') {

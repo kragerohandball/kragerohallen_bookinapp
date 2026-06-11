@@ -32,6 +32,7 @@ export default function AdminPage() {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [approvedUser, setApprovedUser] = useState<{ name: string; email: string; password: string } | null>(null)
 
   // New booking form
   const [nbRoom, setNbRoom] = useState(ROOMS[0].id)
@@ -74,7 +75,12 @@ export default function AdminPage() {
     })
     const data = await res.json()
     if (res.ok) {
-      setMsg({ type: 'success', text: action === 'approve' ? 'Bruker godkjent – passord sendt på e-post.' : 'Bruker avvist.' })
+      if (action === 'approve') {
+        const data = await res.json()
+        setApprovedUser({ name: user.name, email: user.email, password: data.password })
+      } else {
+        setMsg({ type: 'success', text: 'Bruker avvist.' })
+      }
       fetchUsers()
     } else {
       setMsg({ type: 'error', text: data.error })
@@ -170,6 +176,30 @@ export default function AdminPage() {
           <div className={`mb-4 text-sm px-4 py-3 rounded-lg ${
             msg.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
           }`}>{msg.text}</div>
+        )}
+
+        {approvedUser && (
+          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
+            <div className="bg-white rounded-2xl shadow-xl p-6 max-w-md w-full space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900">✅ Bruker godkjent</h3>
+              <p className="text-sm text-gray-600">
+                Send dette til <strong>{approvedUser.name}</strong> manuelt (SMS, e-post, telefon):
+              </p>
+              <div className="bg-gray-50 rounded-xl border border-gray-200 p-4 space-y-2 text-sm">
+                <div><span className="text-gray-500">E-post:</span> <strong>{approvedUser.email}</strong></div>
+                <div><span className="text-gray-500">Passord:</span>{' '}
+                  <strong className="text-blue-700 text-base tracking-wide">{approvedUser.password}</strong>
+                </div>
+              </div>
+              <p className="text-xs text-gray-400">Brukeren blir bedt om å bytte passord ved første innlogging.</p>
+              <button
+                onClick={() => setApprovedUser(null)}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg text-sm"
+              >
+                Jeg har notert passordet
+              </button>
+            </div>
+          </div>
         )}
 
         {/* Godkjenning */}

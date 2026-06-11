@@ -6,6 +6,10 @@ export default withAuth(
     const { pathname } = req.nextUrl
     const token = req.nextauth.token
 
+    if (token?.mustChangePassword && pathname !== '/change-password') {
+      return NextResponse.redirect(new URL('/change-password', req.url))
+    }
+
     if (pathname.startsWith('/admin') && token?.role !== 'ADMIN') {
       return NextResponse.redirect(new URL('/booking', req.url))
     }

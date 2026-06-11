@@ -13,9 +13,10 @@ model User {
   email     String    @unique
   phone     String
   group     String
-  password  String?
-  role      Role      @default(USER)
-  status    Status    @default(PENDING)
+  password          String?
+  mustChangePassword Boolean  @default(false)
+  role              Role     @default(USER)
+  status            Status   @default(PENDING)
   createdAt DateTime  @default(now())
   bookings  Booking[]
 }

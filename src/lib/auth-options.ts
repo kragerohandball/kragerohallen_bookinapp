@@ -31,6 +31,7 @@ export const authOptions: NextAuthOptions = {
           name: user.name,
           role: user.role,
           status: user.status,
+          mustChangePassword: user.mustChangePassword,
         }
       },
     }),
@@ -41,6 +42,7 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id
         token.role = user.role
         token.status = user.status
+        token.mustChangePassword = user.mustChangePassword
       }
       return token
     },
@@ -49,6 +51,7 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id
         session.user.role = token.role
         session.user.status = token.status
+        session.user.mustChangePassword = token.mustChangePassword
       }
       return session
     },
