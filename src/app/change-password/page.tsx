@@ -1,8 +1,7 @@
 'use client'
 import { useState } from 'react'
-import { useSession } from 'next-auth/react'
+import { useSession, signOut } from 'next-auth/react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 
 export default function ChangePasswordPage() {
@@ -25,7 +24,7 @@ export default function ChangePasswordPage() {
     })
     const data = await res.json()
     if (!res.ok) { setError(data.error || 'Noe gikk galt'); setStatus('error') }
-    else { setStatus('success'); setTimeout(() => router.push('/booking'), 2000) }
+    else { setStatus('success'); setTimeout(() => signOut({ callbackUrl: '/login' }), 2000) }
   }
 
   return (
@@ -43,7 +42,7 @@ export default function ChangePasswordPage() {
             <div className="text-center space-y-3">
               <div className="text-5xl">✅</div>
               <p className="font-medium text-white">Passordet er byttet!</p>
-              <p className="text-sm text-gray-400">Sender deg tilbake...</p>
+              <p className="text-sm text-gray-400">Sender deg til innlogging...</p>
             </div>
           ) : (
             <>
