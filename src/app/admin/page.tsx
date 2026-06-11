@@ -396,9 +396,3 @@ function BookingFormFields({
     </>
   )
 }
-
-function todayStr() { return new Date().toISOString().split('T')[0] }
-function maxDateStr() {
-  const d = new Date(); d.setFullYear(d.getFullYear() + 1)
-  return d.toISOString().split('T')[0]
-}
