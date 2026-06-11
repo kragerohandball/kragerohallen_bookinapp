@@ -169,6 +169,9 @@ export default function BookingPage() {
           <h1 className="font-bold text-gray-900 text-lg">Kragerøhallen Booking</h1>
           <div className="flex items-center gap-4">
             <span className="text-sm text-gray-600 hidden sm:block">{session?.user?.name}</span>
+            <Link href="/change-password" className="text-sm text-gray-500 hover:text-gray-800">
+              Bytt passord
+            </Link>
             {session?.user?.role === 'ADMIN' && (
               <Link href="/admin" className="text-sm text-blue-600 hover:underline font-medium">
                 Admin
