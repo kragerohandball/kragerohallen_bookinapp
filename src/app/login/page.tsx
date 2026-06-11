@@ -3,7 +3,6 @@ import { useState } from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import Image from 'next/image'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -30,12 +29,11 @@ export default function LoginPage() {
 
         {/* Logo og tittel */}
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <Image
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
             src="/logo.png"
             alt="KIF Håndball"
-            width={110}
-            height={110}
-            style={{ borderRadius: '50%', display: 'inline-block', marginBottom: '1rem' }}
+            style={{ width: '110px', height: '110px', borderRadius: '50%', objectFit: 'cover', marginBottom: '1rem' }}
           />
           <h1 style={{ color: '#FFD400', fontSize: '2rem', fontWeight: 800, margin: 0 }}>Kragerøhallen</h1>
           <p style={{ color: '#888', marginTop: '0.4rem', fontSize: '0.9rem' }}>Bookingsystem – KIF Håndball</p>
