@@ -1,7 +1,6 @@
 'use client'
 import { useState } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 
 export default function RegisterPage() {
   const [form, setForm] = useState({ name: '', email: '', phone: '', group: '' })
@@ -40,7 +39,8 @@ export default function RegisterPage() {
     <div className="min-h-screen flex items-center justify-center bg-[#1a1a1a] px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8 flex flex-col items-center gap-4">
-          <Image src="/logo.png" alt="KIF Håndball" width={100} height={100} className="rounded-full" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo-small.png" alt="KIF Håndball" width={100} height={100} style={{ borderRadius: '50%', objectFit: 'cover', display: 'block', margin: '0 auto' }} />
           <div>
             <h1 className="text-3xl font-bold text-[#FFD400]">Kragerøhallen</h1>
             <p className="text-gray-400 mt-1 text-sm">Søk om tilgang til bookingsystemet</p>

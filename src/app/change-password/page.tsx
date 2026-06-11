@@ -2,11 +2,9 @@
 import { useState } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 
 export default function ChangePasswordPage() {
   const { data: session } = useSession()
-  const router = useRouter()
   const [form, setForm] = useState({ current: '', next: '', confirm: '' })
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [error, setError] = useState('')
@@ -30,12 +28,9 @@ export default function ChangePasswordPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#1a1a1a] px-4">
       <div className="w-full max-w-md">
-        <div className="text-center mb-8 flex flex-col items-center gap-4">
-          <Image src="/logo.png" alt="KIF Håndball" width={100} height={100} className="rounded-full" />
-          <div>
-            <h1 className="text-3xl font-bold text-[#FFD400]">Kragerøhallen</h1>
-            <p className="text-gray-400 mt-1 text-sm">Bytt passord</p>
-          </div>
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-[#FFD400]">Kragerøhallen</h1>
+          <p className="text-gray-400 mt-1 text-sm">Bytt passord</p>
         </div>
         <div className="bg-[#2a2a2a] rounded-2xl border border-[#FFD400]/20 p-8">
           {status === 'success' ? (
