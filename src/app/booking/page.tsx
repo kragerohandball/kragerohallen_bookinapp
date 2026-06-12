@@ -42,6 +42,7 @@ export default function BookingPage() {
   const [notes, setNotes] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [slotInfo, setSlotInfo] = useState<Booking | null>(null)
   const [myBookings, setMyBookings] = useState<Booking[]>([])
 
   const fetchBookings = useCallback(async () => {
@@ -84,8 +85,18 @@ export default function BookingPage() {
 
   function handleSlotClick(hour: number) {
     const status = getSlotStatus(hour)
-    if (status === 'booked' || status === 'blocked' || status === 'past') return
+    if (status === 'booked' || status === 'blocked') {
+      const booking = bookings.find(b => {
+        const s = new Date(b.startTime).getHours()
+        const e = new Date(b.endTime).getHours()
+        return hour >= s && hour < e
+      })
+      if (booking) setSlotInfo(booking)
+      return
+    }
+    if (status === 'past') return
 
+    setSlotInfo(null)
     setMessage(null)
     if (selectedStart === null) {
       setSelectedStart(hour)
@@ -201,7 +212,7 @@ export default function BookingPage() {
             {ROOMS.map(room => (
               <button
                 key={room.id}
-                onClick={() => { setSelectedRoom(room); setSelectedStart(null); setSelectedEnd(null); setMessage(null) }}
+                onClick={() => { setSelectedRoom(room); setSelectedStart(null); setSelectedEnd(null); setMessage(null); setSlotInfo(null) }}
                 className={`text-left p-4 rounded-xl border-2 transition-all ${
                   selectedRoom?.id === room.id
                     ? 'border-[#FFD400] bg-[#FFD400]/10'
@@ -225,7 +236,7 @@ export default function BookingPage() {
                 value={selectedDate}
                 min={todayStr()}
                 max={maxDateStr()}
-                onChange={e => { setSelectedDate(e.target.value); setSelectedStart(null); setSelectedEnd(null); setMessage(null) }}
+                onChange={e => { setSelectedDate(e.target.value); setSelectedStart(null); setSelectedEnd(null); setMessage(null); setSlotInfo(null) }}
                 className="bg-[#2a2a2a] border border-gray-600 text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#FFD400]"
               />
             </section>
@@ -277,6 +288,28 @@ export default function BookingPage() {
                 <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-gray-200 inline-block"></span>Blokkert</span>
               </div>
             </section>
+
+            {/* Slot info popup */}
+            {slotInfo && (
+              <div className="bg-[#2a2a2a] rounded-xl border border-gray-600 p-4 flex items-start justify-between gap-4">
+                <div className="space-y-1 text-sm">
+                  {slotInfo.isBlocked ? (
+                    <p className="font-semibold text-gray-300">Blokkert tid</p>
+                  ) : (
+                    <>
+                      <p className="font-semibold text-white">{slotInfo.user?.name}</p>
+                      <p className="text-gray-400">{slotInfo.user?.group}</p>
+                    </>
+                  )}
+                  <p className="text-gray-500">
+                    {new Date(slotInfo.startTime).toLocaleTimeString('nb-NO', { hour: '2-digit', minute: '2-digit' })}–
+                    {new Date(slotInfo.endTime).toLocaleTimeString('nb-NO', { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                  {slotInfo.notes && <p className="text-gray-400 italic">"{slotInfo.notes}"</p>}
+                </div>
+                <button onClick={() => setSlotInfo(null)} className="text-gray-500 hover:text-white text-lg leading-none">✕</button>
+              </div>
+            )}
 
             {/* Booking form */}
             {selectedStart !== null && (
