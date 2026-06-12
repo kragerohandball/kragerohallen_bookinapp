@@ -86,6 +86,7 @@ export default function BookingPage() {
     const status = getSlotStatus(hour)
     if (status === 'booked' || status === 'blocked' || status === 'past') return
 
+    setMessage(null)
     if (selectedStart === null) {
       setSelectedStart(hour)
       setSelectedEnd(null)
