@@ -13,7 +13,8 @@ type Booking = {
   id: string; startTime: string; endTime: string; notes?: string; isBlocked: boolean
   room: { name: string }; user: { name: string; email: string; group: string }
 }
-type Tab = 'godkjenning' | 'bookinger' | 'ny-booking' | 'blokker'
+type Tab = 'godkjenning' | 'bookinger' | 'ny-booking' | 'blokker' | 'legg-til' | 'importer'
+type CreatedUser = { name: string; email: string; group: string; password: string; error?: string }
 
 const ROOMS = [
   { id: 'room-kafeen', name: 'Kaféen' },
@@ -35,6 +36,16 @@ export default function AdminPage() {
   const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [approvedUser, setApprovedUser] = useState<{ name: string; email: string; password: string } | null>(null)
 
+  // Legg til bruker manuelt
+  const [newUser, setNewUser] = useState({ name: '', email: '', phone: '', group: '' })
+  const [newUserSubmitting, setNewUserSubmitting] = useState(false)
+  const [createdUsers, setCreatedUsers] = useState<CreatedUser[]>([])
+
+  // Excel-import
+  const [importFile, setImportFile] = useState<File | null>(null)
+  const [importSubmitting, setImportSubmitting] = useState(false)
+  const [importResults, setImportResults] = useState<CreatedUser[]>([])
+
   // New booking form
   const [nbRoom, setNbRoom] = useState(ROOMS[0].id)
   const [nbDate, setNbDate] = useState(todayStr())
@@ -55,6 +66,8 @@ export default function AdminPage() {
   useEffect(() => {
     if (tab === 'godkjenning' || tab === 'ny-booking') fetchUsers()
     if (tab === 'bookinger') fetchBookings()
+    if (tab === 'legg-til') { setCreatedUsers([]); setNewUser({ name: '', email: '', phone: '', group: '' }) }
+    if (tab === 'importer') { setImportResults([]); setImportFile(null) }
   }, [tab])
 
   async function fetchUsers() {
@@ -126,6 +139,38 @@ export default function AdminPage() {
     setTimeout(() => setMsg(null), 4000)
   }
 
+  async function handleCreateUser(e: React.FormEvent) {
+    e.preventDefault()
+    setNewUserSubmitting(true)
+    const res = await fetch('/api/admin/create-user', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newUser),
+    })
+    const data = await res.json()
+    if (res.ok) {
+      setCreatedUsers(prev => [...prev, { name: data.name, email: data.email, group: newUser.group, password: data.password }])
+      setNewUser({ name: '', email: '', phone: '', group: '' })
+    } else {
+      setMsg({ type: 'error', text: data.error })
+      setTimeout(() => setMsg(null), 4000)
+    }
+    setNewUserSubmitting(false)
+  }
+
+  async function handleImport(e: React.FormEvent) {
+    e.preventDefault()
+    if (!importFile) return
+    setImportSubmitting(true)
+    const form = new FormData()
+    form.append('file', importFile)
+    const res = await fetch('/api/admin/import-users', { method: 'POST', body: form })
+    const data = await res.json()
+    if (res.ok) setImportResults(data.results)
+    else { setMsg({ type: 'error', text: data.error }); setTimeout(() => setMsg(null), 4000) }
+    setImportSubmitting(false)
+  }
+
   const pendingUsers = users.filter(u => u.status === 'PENDING')
   const approvedUsers = users.filter(u => u.status === 'APPROVED' && u.role !== 'ADMIN')
 
@@ -134,6 +179,8 @@ export default function AdminPage() {
     { key: 'bookinger', label: 'Bookinger' },
     { key: 'ny-booking', label: 'Ny booking' },
     { key: 'blokker', label: 'Blokker tid' },
+    { key: 'legg-til', label: 'Legg til bruker' },
+    { key: 'importer', label: 'Importer brukere' },
   ]
 
   return (
@@ -350,6 +397,108 @@ export default function AdminPage() {
             >
               {nbSubmitting ? 'Oppretter...' : 'Opprett booking'}
             </button>
+          </div>
+        )}
+
+        {/* Legg til bruker manuelt */}
+        {tab === 'legg-til' && (
+          <div className="space-y-6 max-w-lg">
+            <form onSubmit={handleCreateUser} className="bg-[#2a2a2a] rounded-xl border border-gray-700 p-6 space-y-4">
+              <h3 className="font-semibold text-white">Legg til bruker manuelt</h3>
+              {(['name', 'email', 'phone', 'group'] as const).map(field => (
+                <div key={field}>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
+                    {{ name: 'Fullt navn', email: 'E-post', phone: 'Telefon (valgfritt)', group: 'Gruppe / lag' }[field]}
+                  </label>
+                  <input
+                    type={field === 'email' ? 'email' : 'text'}
+                    value={newUser[field]}
+                    onChange={e => setNewUser(p => ({ ...p, [field]: e.target.value }))}
+                    required={field !== 'phone'}
+                    className="w-full bg-[#1a1a1a] border border-gray-600 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#FFD400] placeholder-gray-600"
+                  />
+                </div>
+              ))}
+              <button type="submit" disabled={newUserSubmitting}
+                className="bg-[#FFD400] hover:bg-[#e6be00] disabled:bg-[#FFD400]/40 text-black font-bold text-sm px-5 py-2 rounded-lg">
+                {newUserSubmitting ? 'Oppretter...' : 'Opprett bruker'}
+              </button>
+            </form>
+
+            {createdUsers.length > 0 && (
+              <div className="bg-[#2a2a2a] rounded-xl border border-[#FFD400]/30 p-6 space-y-3">
+                <h3 className="font-semibold text-[#FFD400]">✅ Opprettede brukere — noter passordene!</h3>
+                <div className="space-y-3">
+                  {createdUsers.map((u, i) => (
+                    <div key={i} className="bg-[#1a1a1a] rounded-lg border border-gray-600 p-4 text-sm space-y-1">
+                      <div><span className="text-gray-500">Navn:</span> <strong className="text-white">{u.name}</strong></div>
+                      <div><span className="text-gray-500">E-post:</span> <span className="text-white">{u.email}</span></div>
+                      <div><span className="text-gray-500">Passord:</span> <strong className="text-[#FFD400] text-base tracking-wide">{u.password}</strong></div>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-500">Brukerne blir bedt om å bytte passord ved første innlogging.</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Importer brukere fra Excel */}
+        {tab === 'importer' && (
+          <div className="space-y-6 max-w-2xl">
+            <form onSubmit={handleImport} className="bg-[#2a2a2a] rounded-xl border border-gray-700 p-6 space-y-4">
+              <h3 className="font-semibold text-white">Importer brukere fra Excel</h3>
+              <div className="bg-[#1a1a1a] rounded-lg border border-gray-700 p-4 text-sm text-gray-400 space-y-1">
+                <p className="text-gray-300 font-medium">Excel-filen må ha disse kolonnene:</p>
+                <p><span className="text-white">Navn</span> · <span className="text-white">E-post</span> · <span className="text-white">Telefon</span> (valgfritt) · <span className="text-white">Gruppe</span></p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Velg Excel-fil (.xlsx)</label>
+                <input
+                  type="file" accept=".xlsx,.xls"
+                  onChange={e => setImportFile(e.target.files?.[0] ?? null)}
+                  className="w-full text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-[#FFD400] file:text-black hover:file:bg-[#e6be00] cursor-pointer"
+                />
+              </div>
+              <button type="submit" disabled={importSubmitting || !importFile}
+                className="bg-[#FFD400] hover:bg-[#e6be00] disabled:bg-[#FFD400]/40 text-black font-bold text-sm px-5 py-2 rounded-lg">
+                {importSubmitting ? 'Importerer...' : 'Importer'}
+              </button>
+            </form>
+
+            {importResults.length > 0 && (
+              <div className="bg-[#2a2a2a] rounded-xl border border-[#FFD400]/30 p-6 space-y-3">
+                <h3 className="font-semibold text-[#FFD400]">Importresultat — noter passordene!</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-[#111] border-b border-gray-700">
+                      <tr>
+                        <th className="text-left px-3 py-2 font-medium text-gray-400">Navn</th>
+                        <th className="text-left px-3 py-2 font-medium text-gray-400">E-post</th>
+                        <th className="text-left px-3 py-2 font-medium text-gray-400">Gruppe</th>
+                        <th className="text-left px-3 py-2 font-medium text-gray-400">Passord</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-700">
+                      {importResults.map((r, i) => (
+                        <tr key={i} className={r.error ? 'bg-red-900/20' : ''}>
+                          <td className="px-3 py-2 text-white">{r.name}</td>
+                          <td className="px-3 py-2 text-gray-400">{r.email}</td>
+                          <td className="px-3 py-2 text-gray-500">{r.group}</td>
+                          <td className="px-3 py-2">
+                            {r.error
+                              ? <span className="text-red-400 text-xs">{r.error}</span>
+                              : <strong className="text-[#FFD400] tracking-wide">{r.password}</strong>
+                            }
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <p className="text-xs text-gray-500">Brukerne blir bedt om å bytte passord ved første innlogging.</p>
+              </div>
+            )}
           </div>
         )}
 
