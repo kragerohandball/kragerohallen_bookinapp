@@ -120,6 +120,7 @@ export default function BookingPage() {
 
   async function handleBook() {
     if (!selectedRoom || selectedStart === null || selectedEnd === null) return
+    if (!notes.trim()) { setMessage({ type: 'error', text: 'Du må fylle inn hvem som skal bruke rommet.' }); return }
     setSubmitting(true)
     setMessage(null)
 
@@ -319,13 +320,14 @@ export default function BookingPage() {
                 )}
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Merknad (valgfritt)</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">Hvem skal bruke rommet?</label>
                   <textarea
                     value={notes}
                     onChange={e => setNotes(e.target.value)}
                     rows={2}
+                    required
                     className="w-full bg-[#1a1a1a] border border-gray-600 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#FFD400] resize-none placeholder-gray-600"
-                    placeholder="F.eks. trening, møte, arrangement..."
+                    placeholder="F.eks. Kragerø IL Marked, J16 trening..."
                   />
                 </div>
 
