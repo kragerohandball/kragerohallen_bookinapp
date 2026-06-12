@@ -329,10 +329,15 @@ export default function BookingPage() {
                 </div>
 
                 {message && (
-                  <div className={`text-sm px-4 py-3 rounded-lg ${
-                    message.type === 'success' ? 'bg-green-900/40 text-green-300 border border-green-700' : 'bg-red-900/40 text-red-300 border border-red-700'
+                  <div className={`rounded-xl px-5 py-4 border ${
+                    message.type === 'success'
+                      ? 'bg-[#FFD400] text-black border-[#e6be00]'
+                      : 'bg-red-900/40 text-red-300 border-red-700'
                   }`}>
-                    {message.text}
+                    {message.type === 'success' && (
+                      <div className="text-2xl mb-1">✅</div>
+                    )}
+                    <p className="font-bold text-base">{message.text}</p>
                   </div>
                 )}
 
