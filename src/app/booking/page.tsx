@@ -136,7 +136,7 @@ export default function BookingPage() {
 
     const data = await res.json()
     if (res.ok) {
-      setMessage({ type: 'success', text: 'Booking bekreftet! Bekreftelse sendt på e-post.' })
+      setMessage({ type: 'success', text: 'Booking bekreftet!' })
       setSelectedStart(null)
       setSelectedEnd(null)
       setNotes('')
