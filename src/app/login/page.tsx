@@ -41,7 +41,7 @@ export default function LoginPage() {
               height: '110px',
               borderRadius: '50%',
               border: '3px solid #FFD400',
-              backgroundImage: 'url(/logo-small.png)',
+              backgroundImage: 'url(/logo-kif.png)',
               backgroundSize: 'contain',
               backgroundRepeat: 'no-repeat',
               backgroundPosition: 'center',
