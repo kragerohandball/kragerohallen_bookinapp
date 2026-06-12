@@ -36,14 +36,9 @@ export default function LoginPage() {
 
           {/* Logo som bakgrunnsbilde — unngår overflow-problemer med img */}
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
-            <svg width="110" height="110" viewBox="0 0 110 110" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="55" cy="55" r="53" fill="#FFD400" stroke="#FFD400" strokeWidth="2"/>
-              <circle cx="55" cy="55" r="44" fill="#1a1a1a"/>
-              <circle cx="55" cy="55" r="38" fill="none" stroke="#FFD400" strokeWidth="2"/>
-              <text x="55" y="48" textAnchor="middle" fill="#FFD400" fontSize="18" fontWeight="bold" fontFamily="Arial,sans-serif">KIF</text>
-              <text x="55" y="66" textAnchor="middle" fill="#FFD400" fontSize="9" fontWeight="bold" fontFamily="Arial,sans-serif" letterSpacing="1">HÅNDBALL</text>
-              <text x="55" y="80" textAnchor="middle" fill="#FFD400" fontSize="8" fontFamily="Arial,sans-serif">KRAGERØ</text>
-            </svg>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo-kif.png" alt="KIF Håndball" width={110} height={110}
+              style={{ borderRadius: '50%', display: 'block', objectFit: 'cover', width: '110px', height: '110px' }} />
           </div>
 
           <h2 style={{ color: '#fff', fontSize: '1.2rem', fontWeight: 600, margin: '0 0 1.5rem', textAlign: 'center' }}>Logg inn</h2>
