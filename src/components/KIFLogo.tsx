@@ -1,6 +1,6 @@
 export default function KIFLogo() {
   return (
-    <svg width="120" height="120" viewBox="0 0 1575 1575" xmlns="http://www.w3.org/2000/svg" fillRule="evenodd" clipRule="evenodd" strokeLinecap="round" strokeLinejoin="round" strokeMiterlimit="1.5">
+    <svg width="100%" height="100%" viewBox="0 0 1575 1575" xmlns="http://www.w3.org/2000/svg" fillRule="evenodd" clipRule="evenodd" strokeLinecap="round" strokeLinejoin="round" strokeMiterlimit="1.5">
     <g transform="matrix(1,0,0,1,680,-32.56876)">
         <circle cx="91.5" cy="793.902" r="602.5" fill="rgb(253,218,36)" stroke="black" strokeWidth="11.11px"/>
     </g>
