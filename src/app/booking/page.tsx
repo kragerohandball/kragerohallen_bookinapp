@@ -200,7 +200,7 @@ export default function BookingPage() {
             {ROOMS.map(room => (
               <button
                 key={room.id}
-                onClick={() => { setSelectedRoom(room); setSelectedStart(null); setSelectedEnd(null) }}
+                onClick={() => { setSelectedRoom(room); setSelectedStart(null); setSelectedEnd(null); setMessage(null) }}
                 className={`text-left p-4 rounded-xl border-2 transition-all ${
                   selectedRoom?.id === room.id
                     ? 'border-[#FFD400] bg-[#FFD400]/10'
@@ -224,7 +224,7 @@ export default function BookingPage() {
                 value={selectedDate}
                 min={todayStr()}
                 max={maxDateStr()}
-                onChange={e => { setSelectedDate(e.target.value); setSelectedStart(null); setSelectedEnd(null) }}
+                onChange={e => { setSelectedDate(e.target.value); setSelectedStart(null); setSelectedEnd(null); setMessage(null) }}
                 className="bg-[#2a2a2a] border border-gray-600 text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#FFD400]"
               />
             </section>
