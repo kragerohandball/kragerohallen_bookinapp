@@ -36,9 +36,25 @@ export default function LoginPage() {
 
           {/* Logo som bakgrunnsbilde — unngår overflow-problemer med img */}
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo-kif.png" alt="KIF Håndball" width={110} height={110}
-              style={{ borderRadius: '50%', display: 'block', objectFit: 'cover', width: '110px', height: '110px' }} />
+            <svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+              {/* Ytre gul ring */}
+              <circle cx="60" cy="60" r="58" fill="#FFD400"/>
+              {/* Indre svart sirkel */}
+              <circle cx="60" cy="60" r="48" fill="#111111"/>
+              {/* Indre gul ring */}
+              <circle cx="60" cy="60" r="42" fill="none" stroke="#FFD400" strokeWidth="2.5"/>
+              {/* Håndball-ikon (enkel sirkel med streker) */}
+              <circle cx="60" cy="44" r="12" fill="none" stroke="#FFD400" strokeWidth="1.5"/>
+              <path d="M52 38 Q60 32 68 38" fill="none" stroke="#FFD400" strokeWidth="1.2"/>
+              <path d="M49 44 Q60 49 71 44" fill="none" stroke="#FFD400" strokeWidth="1.2"/>
+              <path d="M52 50 Q60 56 68 50" fill="none" stroke="#FFD400" strokeWidth="1.2"/>
+              {/* KIF tekst */}
+              <text x="60" y="73" textAnchor="middle" fill="#FFD400" fontSize="15" fontWeight="bold" fontFamily="Arial Black,Arial,sans-serif" letterSpacing="2">KIF</text>
+              {/* HÅNDBALL tekst */}
+              <text x="60" y="86" textAnchor="middle" fill="#FFD400" fontSize="7.5" fontWeight="bold" fontFamily="Arial,sans-serif" letterSpacing="1.5">HÅNDBALL</text>
+              {/* KRAGERØ tekst */}
+              <text x="60" y="97" textAnchor="middle" fill="#FFD400" fontSize="6.5" fontFamily="Arial,sans-serif" letterSpacing="1">KRAGERØ</text>
+            </svg>
           </div>
 
           <h2 style={{ color: '#fff', fontSize: '1.2rem', fontWeight: 600, margin: '0 0 1.5rem', textAlign: 'center' }}>Logg inn</h2>
