@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import Link from 'next/link'
+import KIFLogo from '@/components/KIFLogo'
 
 export default function ChangePasswordPage() {
   const { data: session } = useSession()
@@ -28,9 +29,10 @@ export default function ChangePasswordPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#1a1a1a] px-4">
       <div className="w-full max-w-md">
-        <div className="text-center mb-8">
+        <div className="text-center mb-8 flex flex-col items-center gap-3">
+          <div style={{ width: 80, height: 80 }}><KIFLogo /></div>
           <h1 className="text-3xl font-bold text-[#FFD400]">Kragerøhallen</h1>
-          <p className="text-gray-400 mt-1 text-sm">Bytt passord</p>
+          <p className="text-gray-400 text-sm">Bytt passord</p>
         </div>
         <div className="bg-[#2a2a2a] rounded-2xl border border-[#FFD400]/20 p-8">
           {status === 'success' ? (

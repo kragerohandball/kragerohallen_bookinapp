@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import Link from 'next/link'
 import { TIME_SLOTS, formatTime } from '@/lib/utils'
+import KIFLogo from '@/components/KIFLogo'
 
 type User = {
   id: string; name: string; email: string; phone: string
@@ -140,7 +141,7 @@ export default function AdminPage() {
       <nav className="bg-[#111] border-b border-[#FFD400]/20 px-4 py-3">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src="/logo.png" alt="KIF" className="w-8 h-8 rounded-full" />
+            <div style={{ width: 32, height: 32 }}><KIFLogo /></div>
             <Link href="/booking" className="text-gray-400 hover:text-gray-200 text-sm">← Booking</Link>
             <span className="text-gray-600">|</span>
             <h1 className="font-bold text-[#FFD400]">Admin</h1>

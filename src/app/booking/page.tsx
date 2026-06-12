@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import Link from 'next/link'
 import { TIME_SLOTS, formatTime } from '@/lib/utils'
+import KIFLogo from '@/components/KIFLogo'
 
 type Room = { id: string; name: string; capacity: number; description: string }
 type Booking = {
@@ -167,7 +168,7 @@ export default function BookingPage() {
       <nav className="bg-[#111] border-b border-[#FFD400]/20 px-4 py-3">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src="/logo.png" alt="KIF" className="w-8 h-8 rounded-full" />
+            <div style={{ width: 32, height: 32 }}><KIFLogo /></div>
             <h1 className="font-bold text-[#FFD400] text-lg">Kragerøhallen</h1>
           </div>
           <div className="flex items-center gap-4">
