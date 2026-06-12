@@ -138,11 +138,11 @@ export default function BookingPage() {
 
     const data = await res.json()
     if (res.ok) {
-      setMessage({ type: 'success', text: 'Booking bekreftet!' })
       setSelectedStart(null)
       setSelectedEnd(null)
       setNotes('')
       fetchBookings()
+      setMessage({ type: 'success', text: 'Booking bekreftet!' })
     } else {
       setMessage({ type: 'error', text: data.error || 'Noe gikk galt' })
     }
@@ -331,15 +331,8 @@ export default function BookingPage() {
                   />
                 </div>
 
-                {message && (
-                  <div className={`rounded-xl px-5 py-4 border ${
-                    message.type === 'success'
-                      ? 'bg-[#FFD400] text-black border-[#e6be00]'
-                      : 'bg-red-900/40 text-red-300 border-red-700'
-                  }`}>
-                    {message.type === 'success' && (
-                      <div className="text-2xl mb-1">✅</div>
-                    )}
+                {message?.type === 'error' && (
+                  <div className="rounded-xl px-5 py-4 border bg-red-900/40 text-red-300 border-red-700">
                     <p className="font-bold text-base">{message.text}</p>
                   </div>
                 )}
@@ -362,6 +355,13 @@ export default function BookingPage() {
               </section>
             )}
           </>
+        )}
+
+        {message?.type === 'success' && (
+          <div className="rounded-2xl px-6 py-6 bg-[#FFD400] text-black border border-[#e6be00] text-center shadow-lg">
+            <div className="text-4xl mb-2">✅</div>
+            <p className="font-bold text-xl">{message.text}</p>
+          </div>
         )}
 
         {/* My bookings */}
