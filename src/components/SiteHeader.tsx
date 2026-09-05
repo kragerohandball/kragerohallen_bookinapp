@@ -41,6 +41,9 @@ export default function SiteHeader({ backHref, backLabel, title }: Props) {
         </div>
         <div className="flex items-center gap-4">
           <span className="text-sm text-gray-400 hidden sm:block">{session?.user?.name}</span>
+          {session?.user && (
+            <Link href="/kamper" className="text-sm font-medium hover:underline" style={{ color: primaryColor }}>Kamper</Link>
+          )}
           <Link href="/change-password" className="text-sm text-gray-400 hover:text-white">Bytt passord</Link>
           {session?.user?.role === 'ADMIN' && (
             <Link href="/admin" className="text-sm font-medium hover:underline" style={{ color: primaryColor }}>Admin</Link>

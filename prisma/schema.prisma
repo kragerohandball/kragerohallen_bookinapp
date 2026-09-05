@@ -62,3 +62,114 @@ model SiteSettings {
   navBgColor   String @default("#111111")
   footerText   String @default("Kragerø IF Håndball · Frydensborgveien 13, 3770 Kragerø")
 }
+
+model Team {
+  id              String   @id @default(cuid())
+  name            String
+  rosterImportUrl String?
+  createdAt       DateTime @default(now())
+  players         Player[]
+  matches         Match[]
+}
+
+model Player {
+  id           String       @id @default(cuid())
+  teamId       String
+  name         String
+  number       Int?
+  position     String?
+  isGoalkeeper Boolean      @default(false)
+  active       Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+  team         Team         @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  events       MatchEvent[] @relation("PlayerEvents")
+  assistEvents MatchEvent[] @relation("AssistEvents")
+  squadMatches Match[]      @relation("MatchSquad")
+
+  @@index([teamId])
+}
+
+model Match {
+  id                 String       @id @default(cuid())
+  teamId             String
+  opponentName       String
+  season             String
+  date               DateTime
+  status             MatchStatus  @default(SCHEDULED)
+  period             Int          @default(1)
+  clockRunning       Boolean      @default(false)
+  clockStartedAt     DateTime?
+  accumulatedSeconds Int          @default(0)
+  createdById        String
+  createdAt          DateTime     @default(now())
+  finishedAt         DateTime?
+  team               Team         @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  events             MatchEvent[]
+  squad              Player[]     @relation("MatchSquad")
+
+  @@index([teamId])
+  @@index([teamId, season])
+}
+
+model MatchEvent {
+  id             String              @id @default(cuid())
+  matchId        String
+  type           MatchEventType
+  period         Int
+  minute         Int?
+  playerId       String?
+  assistPlayerId String?
+  zone           GoalZone?
+  faultType      TechnicalFaultType?
+  punishment     Punishment?
+  createdAt      DateTime            @default(now())
+  match          Match               @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  player         Player?             @relation("PlayerEvents", fields: [playerId], references: [id])
+  assistPlayer   Player?             @relation("AssistEvents", fields: [assistPlayerId], references: [id])
+
+  @@index([matchId])
+}
+
+enum MatchStatus {
+  SCHEDULED
+  LIVE
+  HALFTIME
+  FINISHED
+}
+
+enum MatchEventType {
+  GOAL
+  SHOT_SAVED
+  SHOT_MISSED
+  TECHNICAL_FAULT
+  DEFENSIVE_FOUL
+  GOAL_CONCEDED
+  SAVE
+}
+
+enum TechnicalFaultType {
+  STEPS
+  CHARGING
+  DOUBLE_DRIBBLE
+  PASSIVE
+  OTHER
+}
+
+enum Punishment {
+  NONE
+  YELLOW
+  TWO_MIN
+  RED
+}
+
+enum GoalZone {
+  TL
+  TC
+  TR
+  ML
+  MC
+  MR
+  BL
+  BC
+  BR
+}
