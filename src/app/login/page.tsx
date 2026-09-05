@@ -3,7 +3,8 @@ import { useState } from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import KIFLogo from '@/components/KIFLogo'
+import Image from 'next/image'
+import { useSiteSettings } from '@/components/SiteSettingsContext'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -11,6 +12,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const { siteTitle, logoUrl, primaryColor, bgColor, navBgColor } = useSiteSettings()
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -25,29 +27,36 @@ export default function LoginPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: bgColor, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
       <div style={{ width: '100%', maxWidth: '420px' }}>
         <div style={{ textAlign: 'center', marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{ width: 100, height: 100 }}>
-            <KIFLogo />
-          </div>
-          <h1 style={{ color: '#FFD400', fontSize: '2rem', fontWeight: 800, margin: 0 }}>Kragerøhallen</h1>
+          {logoUrl && (
+            <Image
+              src={logoUrl}
+              alt={siteTitle}
+              width={100}
+              height={100}
+              className="object-contain"
+              unoptimized
+            />
+          )}
+          <h1 style={{ color: primaryColor, fontSize: '2rem', fontWeight: 800, margin: 0 }}>{siteTitle}</h1>
         </div>
-        <div style={{ backgroundColor: '#2a2a2a', borderRadius: '1rem', border: '1px solid rgba(255,212,0,0.2)', padding: '2rem' }}>
+        <div style={{ backgroundColor: navBgColor, borderRadius: '1rem', border: `1px solid ${primaryColor}33`, padding: '2rem' }}>
           <h2 style={{ color: 'white', fontSize: '1.25rem', fontWeight: 600, marginTop: 0, marginBottom: '1.5rem' }}>Logg inn</h2>
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div>
               <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#d1d5db', marginBottom: '0.25rem' }}>E-post</label>
               <input
                 type="email" value={email} onChange={e => setEmail(e.target.value)} required
-                style={{ width: '100%', backgroundColor: '#1a1a1a', border: '1px solid #4b5563', color: 'white', borderRadius: '0.5rem', padding: '0.5rem 0.75rem', boxSizing: 'border-box', outline: 'none' }}
+                style={{ width: '100%', backgroundColor: bgColor, border: '1px solid #4b5563', color: 'white', borderRadius: '0.5rem', padding: '0.5rem 0.75rem', boxSizing: 'border-box', outline: 'none' }}
               />
             </div>
             <div>
               <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#d1d5db', marginBottom: '0.25rem' }}>Passord</label>
               <input
                 type="password" value={password} onChange={e => setPassword(e.target.value)} required
-                style={{ width: '100%', backgroundColor: '#1a1a1a', border: '1px solid #4b5563', color: 'white', borderRadius: '0.5rem', padding: '0.5rem 0.75rem', boxSizing: 'border-box', outline: 'none' }}
+                style={{ width: '100%', backgroundColor: bgColor, border: '1px solid #4b5563', color: 'white', borderRadius: '0.5rem', padding: '0.5rem 0.75rem', boxSizing: 'border-box', outline: 'none' }}
               />
             </div>
             {error && (
@@ -56,13 +65,13 @@ export default function LoginPage() {
               </div>
             )}
             <button type="submit" disabled={loading}
-              style={{ width: '100%', backgroundColor: loading ? 'rgba(255,212,0,0.4)' : '#FFD400', color: '#000', fontWeight: 700, padding: '0.625rem', borderRadius: '0.5rem', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', fontSize: '1rem' }}>
+              style={{ width: '100%', backgroundColor: loading ? `${primaryColor}66` : primaryColor, color: '#000', fontWeight: 700, padding: '0.625rem', borderRadius: '0.5rem', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', fontSize: '1rem' }}>
               {loading ? 'Logger inn...' : 'Logg inn'}
             </button>
           </form>
           <p style={{ textAlign: 'center', fontSize: '0.875rem', color: '#6b7280', marginTop: '1.5rem', marginBottom: 0 }}>
             Ikke bruker?{' '}
-            <Link href="/register" style={{ color: '#FFD400', fontWeight: 500, textDecoration: 'none' }}>Søk om tilgang</Link>
+            <Link href="/register" style={{ color: primaryColor, fontWeight: 500, textDecoration: 'none' }}>Søk om tilgang</Link>
           </p>
         </div>
       </div>

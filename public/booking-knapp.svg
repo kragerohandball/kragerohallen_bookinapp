@@ -1,0 +1,6 @@
+<svg viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/svg" width="400" height="200">
+  <rect width="400" height="200" rx="16" fill="#FFD400"/>
+  <text x="200" y="76" font-family="Arial, sans-serif" font-size="27" font-weight="700" fill="#1a1a1a" text-anchor="middle">Gå til booking av rom</text>
+  <text x="200" y="112" font-family="Arial, sans-serif" font-size="27" font-weight="700" fill="#1a1a1a" text-anchor="middle">i Kragerøhallen</text>
+  <text x="200" y="162" font-family="Arial, sans-serif" font-size="32" font-weight="700" fill="#1a1a1a" text-anchor="middle">→</text>
+</svg>

@@ -1,9 +1,9 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { useSession, signOut } from 'next-auth/react'
-import Link from 'next/link'
+import { useSession } from 'next-auth/react'
 import { TIME_SLOTS, formatTime } from '@/lib/utils'
-import KIFLogo from '@/components/KIFLogo'
+import SiteHeader from '@/components/SiteHeader'
+import { useSiteSettings } from '@/components/SiteSettingsContext'
 
 type User = {
   id: string; name: string; email: string; phone: string
@@ -13,7 +13,7 @@ type Booking = {
   id: string; startTime: string; endTime: string; notes?: string; isBlocked: boolean
   room: { name: string }; user: { name: string; email: string; group: string }
 }
-type Tab = 'godkjenning' | 'bookinger' | 'ny-booking' | 'blokker' | 'legg-til' | 'importer'
+type Tab = 'godkjenning' | 'bookinger' | 'ny-booking' | 'blokker' | 'legg-til' | 'importer' | 'innstillinger'
 type CreatedUser = { name: string; email: string; group: string; password: string; error?: string }
 
 const ROOMS = [
@@ -29,6 +29,7 @@ function maxDateStr() {
 
 export default function AdminPage() {
   const { data: session } = useSession()
+  const { primaryColor } = useSiteSettings()
   const [tab, setTab] = useState<Tab>('godkjenning')
   const [users, setUsers] = useState<User[]>([])
   const [bookings, setBookings] = useState<Booking[]>([])
@@ -181,24 +182,12 @@ export default function AdminPage() {
     { key: 'blokker', label: 'Blokker tid' },
     { key: 'legg-til', label: 'Legg til bruker' },
     { key: 'importer', label: 'Importer brukere' },
+    { key: 'innstillinger', label: 'Innstillinger' },
   ]
 
   return (
     <div className="min-h-screen bg-[#1a1a1a]">
-      <nav className="bg-[#111] border-b border-[#FFD400]/20 px-4 py-3">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div style={{ width: 32, height: 32 }}><KIFLogo /></div>
-            <Link href="/booking" className="text-gray-400 hover:text-gray-200 text-sm">← Booking</Link>
-            <span className="text-gray-600">|</span>
-            <h1 className="font-bold text-[#FFD400]">Admin</h1>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-400 hidden sm:block">{session?.user?.name}</span>
-            <button onClick={() => signOut({ callbackUrl: '/login' })} className="text-sm text-gray-400 hover:text-white">Logg ut</button>
-          </div>
-        </div>
-      </nav>
+      <SiteHeader backHref="/booking" backLabel="← Booking" title="Admin" />
 
       <main className="max-w-5xl mx-auto px-4 py-8">
         {/* Tabs */}
@@ -207,15 +196,15 @@ export default function AdminPage() {
             <button
               key={t.key}
               onClick={() => { setTab(t.key); setMsg(null) }}
-              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
-                tab === t.key ? 'bg-[#FFD400] text-black' : 'text-gray-400 hover:text-white'
-              }`}
+              className="px-4 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5"
+              style={tab === t.key ? { backgroundColor: primaryColor, color: 'black' } : { color: '#9ca3af' }}
             >
               {t.label}
               {t.badge != null && t.badge > 0 && (
-                <span className={`text-xs rounded-full w-5 h-5 flex items-center justify-center ${
-                  tab === t.key ? 'bg-black text-[#FFD400]' : 'bg-red-500 text-white'
-                }`}>{t.badge}</span>
+                <span className="text-xs rounded-full w-5 h-5 flex items-center justify-center"
+                  style={tab === t.key ? { backgroundColor: 'black', color: primaryColor } : { backgroundColor: '#ef4444', color: 'white' }}>
+                  {t.badge}
+                </span>
               )}
             </button>
           ))}
@@ -502,6 +491,9 @@ export default function AdminPage() {
           </div>
         )}
 
+        {/* Innstillinger */}
+        {tab === 'innstillinger' && <SiteSettingsTab primaryColor={primaryColor} />}
+
         {/* Blokker tid */}
         {tab === 'blokker' && (
           <div className="bg-[#2a2a2a] rounded-xl border border-gray-700 p-6 max-w-lg space-y-4">
@@ -525,6 +517,123 @@ export default function AdminPage() {
         )}
       </main>
     </div>
+  )
+}
+
+function SiteSettingsTab({ primaryColor }: { primaryColor: string }) {
+  const [form, setForm] = useState({
+    siteTitle: '',
+    logoUrl: '',
+    primaryColor: '',
+    bgColor: '',
+    navBgColor: '',
+    footerText: '',
+  })
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const [loaded, setLoaded] = useState(false)
+
+  useEffect(() => {
+    fetch('/api/admin/site-settings')
+      .then(r => r.json())
+      .then(d => {
+        setForm({
+          siteTitle: d.siteTitle ?? '',
+          logoUrl: d.logoUrl ?? '',
+          primaryColor: d.primaryColor ?? '',
+          bgColor: d.bgColor ?? '',
+          navBgColor: d.navBgColor ?? '',
+          footerText: d.footerText ?? '',
+        })
+        setLoaded(true)
+      })
+  }, [])
+
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault()
+    setSaving(true)
+    setSaved(false)
+    const res = await fetch('/api/admin/site-settings', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(form),
+    })
+    if (res.ok) {
+      setSaved(true)
+      setTimeout(() => setSaved(false), 3000)
+      // Refresh the page to apply new settings
+      window.location.reload()
+    }
+    setSaving(false)
+  }
+
+  if (!loaded) return <div className="text-gray-400 text-sm py-8">Laster innstillinger...</div>
+
+  const inputCls = "w-full bg-[#1a1a1a] border border-gray-600 text-white rounded-lg px-3 py-2 text-sm focus:outline-none"
+
+  return (
+    <form onSubmit={handleSave} className="max-w-lg space-y-5">
+      <div className="bg-[#2a2a2a] rounded-xl border border-gray-700 p-6 space-y-4">
+        <h3 className="font-semibold text-white">Branding & design</h3>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-1">Sidetittel</label>
+          <input type="text" value={form.siteTitle} onChange={e => setForm(p => ({ ...p, siteTitle: e.target.value }))} className={inputCls} placeholder="Kragerøhallen Booking" />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-1">Logo-URL</label>
+          <input type="text" value={form.logoUrl} onChange={e => setForm(p => ({ ...p, logoUrl: e.target.value }))} className={inputCls} placeholder="/kif-logo.png" />
+          <p className="text-xs text-gray-500 mt-1">Sti til bilde i /public-mappen, f.eks. /logo.png — eller full URL</p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-1">Footertekst</label>
+          <input type="text" value={form.footerText} onChange={e => setForm(p => ({ ...p, footerText: e.target.value }))} className={inputCls} placeholder="Kragerø IF Håndball · Frydensborgveien 13..." />
+        </div>
+      </div>
+
+      <div className="bg-[#2a2a2a] rounded-xl border border-gray-700 p-6 space-y-4">
+        <h3 className="font-semibold text-white">Farger</h3>
+
+        {([
+          ['primaryColor', 'Primærfarge (knapper, aksentfarger)'],
+          ['bgColor', 'Bakgrunnsfarge (sidebakgrunn)'],
+          ['navBgColor', 'Navigasjonsfarge (toppbar)'],
+        ] as [keyof typeof form, string][]).map(([key, label]) => (
+          <div key={key}>
+            <label className="block text-sm font-medium text-gray-300 mb-1">{label}</label>
+            <div className="flex items-center gap-3">
+              <input
+                type="color"
+                value={form[key] || '#FFD400'}
+                onChange={e => setForm(p => ({ ...p, [key]: e.target.value }))}
+                className="w-10 h-10 rounded cursor-pointer border border-gray-600 bg-transparent p-0.5"
+              />
+              <input
+                type="text"
+                value={form[key]}
+                onChange={e => setForm(p => ({ ...p, [key]: e.target.value }))}
+                className="flex-1 bg-[#1a1a1a] border border-gray-600 text-white rounded-lg px-3 py-2 text-sm font-mono focus:outline-none"
+                placeholder="#FFD400"
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex items-center gap-3">
+        <button
+          type="submit"
+          disabled={saving}
+          className="text-black font-bold px-6 py-2 rounded-lg text-sm disabled:opacity-40"
+          style={{ backgroundColor: primaryColor }}
+        >
+          {saving ? 'Lagrer...' : 'Lagre innstillinger'}
+        </button>
+        {saved && <span className="text-green-400 text-sm">✓ Lagret! Siden laster på nytt...</span>}
+      </div>
+    </form>
   )
 }
 

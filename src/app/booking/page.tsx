@@ -1,9 +1,9 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import { useSession, signOut } from 'next-auth/react'
-import Link from 'next/link'
+import { useSession } from 'next-auth/react'
 import { TIME_SLOTS, formatTime } from '@/lib/utils'
-import KIFLogo from '@/components/KIFLogo'
+import SiteHeader from '@/components/SiteHeader'
+import { useSiteSettings } from '@/components/SiteSettingsContext'
 
 type Room = { id: string; name: string; capacity: number; description: string }
 type Booking = {
@@ -33,6 +33,7 @@ function maxDateStr() {
 
 export default function BookingPage() {
   const { data: session } = useSession()
+  const { primaryColor, bgColor, navBgColor, footerText } = useSiteSettings()
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null)
   const [selectedDate, setSelectedDate] = useState(todayStr())
   const [bookings, setBookings] = useState<Booking[]>([])
@@ -172,57 +173,32 @@ export default function BookingPage() {
     booked: 'bg-red-100 text-red-700 cursor-not-allowed border-red-300',
     blocked: 'bg-gray-200 text-gray-500 cursor-not-allowed border-gray-300',
     past: 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200',
-    selected: 'bg-[#FFD400] text-black cursor-pointer border-[#e6be00] font-bold',
+    selected: 'text-black cursor-pointer font-bold',
   }
 
   return (
-    <div className="min-h-screen bg-[#1a1a1a]">
-      {/* Navbar */}
-      <nav className="bg-[#111] border-b border-[#FFD400]/20 px-4 py-3">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div style={{ width: 32, height: 32 }}><KIFLogo /></div>
-            <h1 className="font-bold text-[#FFD400] text-lg">Kragerøhallen</h1>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-400 hidden sm:block">{session?.user?.name}</span>
-            <Link href="/change-password" className="text-sm text-gray-400 hover:text-white">
-              Bytt passord
-            </Link>
-            {session?.user?.role === 'ADMIN' && (
-              <Link href="/admin" className="text-sm text-[#FFD400] hover:underline font-medium">
-                Admin
-              </Link>
-            )}
-            <button
-              onClick={() => signOut({ callbackUrl: '/login' })}
-              className="text-sm text-gray-400 hover:text-white"
-            >
-              Logg ut
-            </button>
-          </div>
-        </div>
-      </nav>
+    <div className="min-h-screen" style={{ backgroundColor: bgColor }}>
+      <SiteHeader />
 
       <main className="max-w-4xl mx-auto px-4 py-8 space-y-6">
         {/* Room selection */}
         <section>
           <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">Velg rom</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {ROOMS.map(room => (
-              <button
-                key={room.id}
-                onClick={() => { setSelectedRoom(room); setSelectedStart(null); setSelectedEnd(null); setMessage(null); setSlotInfo(null) }}
-                className={`text-left p-4 rounded-xl border-2 transition-all ${
-                  selectedRoom?.id === room.id
-                    ? 'border-[#FFD400] bg-[#FFD400]/10'
-                    : 'border-gray-700 bg-[#2a2a2a] hover:border-gray-500'
-                }`}
-              >
-                <div className={`font-semibold ${selectedRoom?.id === room.id ? 'text-[#FFD400]' : 'text-white'}`}>{room.name}</div>
-                <div className="text-sm text-gray-400 mt-0.5">{room.description}</div>
-              </button>
-            ))}
+            {ROOMS.map(room => {
+              const isSelected = selectedRoom?.id === room.id
+              return (
+                <button
+                  key={room.id}
+                  onClick={() => { setSelectedRoom(room); setSelectedStart(null); setSelectedEnd(null); setMessage(null); setSlotInfo(null) }}
+                  className="text-left p-4 rounded-xl border-2 transition-all bg-[#2a2a2a]"
+                  style={isSelected ? { borderColor: primaryColor, backgroundColor: `${primaryColor}18` } : { borderColor: '#374151' }}
+                >
+                  <div className="font-semibold" style={isSelected ? { color: primaryColor } : { color: 'white' }}>{room.name}</div>
+                  <div className="text-sm text-gray-400 mt-0.5">{room.description}</div>
+                </button>
+              )
+            })}
           </div>
         </section>
 
@@ -237,7 +213,8 @@ export default function BookingPage() {
                 min={todayStr()}
                 max={maxDateStr()}
                 onChange={e => { setSelectedDate(e.target.value); setSelectedStart(null); setSelectedEnd(null); setMessage(null); setSlotInfo(null) }}
-                className="bg-[#2a2a2a] border border-gray-600 text-white rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#FFD400]"
+                className="bg-[#2a2a2a] border border-gray-600 text-white rounded-lg px-3 py-2 focus:outline-none"
+                style={{ '--tw-ring-color': primaryColor } as React.CSSProperties}
               />
             </section>
 
@@ -258,11 +235,13 @@ export default function BookingPage() {
                       const e = new Date(b.endTime).getHours()
                       return hour >= s && hour < e
                     })
+                    const isSelected = status === 'selected'
                     return (
                       <div
                         key={hour}
                         onClick={() => handleSlotClick(hour)}
                         className={`rounded-lg border text-center py-2 text-xs font-medium transition-all ${slotColors[status]}`}
+                        style={isSelected ? { backgroundColor: primaryColor, borderColor: primaryColor } : undefined}
                         title={
                           booking
                             ? booking.isBlocked
@@ -283,7 +262,7 @@ export default function BookingPage() {
               {/* Legend */}
               <div className="flex gap-4 mt-3 text-xs text-gray-500 flex-wrap">
                 <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-green-200 border border-green-300 inline-block"></span>Ledig</span>
-                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-[#FFD400] inline-block"></span>Valgt</span>
+                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded inline-block" style={{ backgroundColor: primaryColor }}></span>Valgt</span>
                 <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-red-100 border border-red-300 inline-block"></span>Opptatt</span>
                 <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-gray-200 inline-block"></span>Blokkert</span>
               </div>
@@ -313,7 +292,7 @@ export default function BookingPage() {
 
             {/* Booking form */}
             {selectedStart !== null && (
-              <section className="bg-[#2a2a2a] rounded-xl border border-[#FFD400]/20 p-5 space-y-4">
+              <section className="bg-[#2a2a2a] rounded-xl p-5 space-y-4" style={{ border: `1px solid ${primaryColor}30` }}>
                 <h2 className="font-semibold text-white">Fullfør booking</h2>
 
                 <div className="flex gap-4 flex-wrap">
@@ -328,7 +307,7 @@ export default function BookingPage() {
                     <select
                       value={selectedEnd ?? ''}
                       onChange={handleEndChange}
-                      className="bg-[#1a1a1a] border border-gray-600 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#FFD400]"
+                      className="bg-[#1a1a1a] border border-gray-600 text-white rounded-lg px-3 py-2 text-sm focus:outline-none"
                     >
                       <option value="">Velg sluttid</option>
                       {Array.from({ length: 22 - selectedStart }, (_, i) => selectedStart + i + 1).map(h => {
@@ -346,7 +325,7 @@ export default function BookingPage() {
                 </div>
 
                 {selectedEnd !== null && (
-                  <div className="bg-[#FFD400]/10 border border-[#FFD400]/30 rounded-lg px-4 py-2 text-sm text-[#FFD400]">
+                  <div className="rounded-lg px-4 py-2 text-sm" style={{ backgroundColor: `${primaryColor}18`, border: `1px solid ${primaryColor}40`, color: primaryColor }}>
                     {selectedRoom.name} • {formatTime(selectedStart)}–{formatTime(selectedEnd)} •{' '}
                     {selectedEnd - selectedStart} time{selectedEnd - selectedStart > 1 ? 'r' : ''}
                   </div>
@@ -359,7 +338,7 @@ export default function BookingPage() {
                     onChange={e => setNotes(e.target.value)}
                     rows={2}
                     required
-                    className="w-full bg-[#1a1a1a] border border-gray-600 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#FFD400] resize-none placeholder-gray-600"
+                    className="w-full bg-[#1a1a1a] border border-gray-600 text-white rounded-lg px-3 py-2 text-sm focus:outline-none resize-none placeholder-gray-600"
                     placeholder="F.eks. Kragerø IL Marked, J16 trening..."
                   />
                 </div>
@@ -374,7 +353,8 @@ export default function BookingPage() {
                   <button
                     onClick={handleBook}
                     disabled={submitting || selectedEnd === null}
-                    className="bg-[#FFD400] hover:bg-[#e6be00] disabled:bg-[#FFD400]/40 text-black font-bold px-6 py-2 rounded-lg text-sm transition-colors"
+                    className="text-black font-bold px-6 py-2 rounded-lg text-sm transition-colors disabled:opacity-40"
+                    style={{ backgroundColor: primaryColor }}
                   >
                     {submitting ? 'Booker...' : 'Bekreft booking'}
                   </button>
@@ -391,7 +371,7 @@ export default function BookingPage() {
         )}
 
         {message?.type === 'success' && (
-          <div className="rounded-2xl px-6 py-6 bg-[#FFD400] text-black border border-[#e6be00] text-center shadow-lg">
+          <div className="rounded-2xl px-6 py-6 text-black text-center shadow-lg" style={{ backgroundColor: primaryColor }}>
             <div className="text-4xl mb-2">✅</div>
             <p className="font-bold text-xl">{message.text}</p>
           </div>
@@ -425,6 +405,13 @@ export default function BookingPage() {
           </section>
         )}
       </main>
+
+      {/* Footer */}
+      {footerText && (
+        <footer className="border-t border-gray-800 py-4 px-4 mt-8">
+          <p className="text-center text-xs text-gray-600 max-w-4xl mx-auto">{footerText}</p>
+        </footer>
+      )}
     </div>
   )
 }
