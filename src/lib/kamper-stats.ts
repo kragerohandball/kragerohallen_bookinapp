@@ -1,5 +1,5 @@
-import type { MatchEventType, Punishment, TechnicalFaultType } from '@prisma/client'
-import { FAULT_TYPE_ORDER } from './kamper-constants'
+import type { MatchEventType, Punishment, ShotPosition, TechnicalFaultType } from '@prisma/client'
+import { FAULT_TYPE_ORDER, SHOT_POSITION_ORDER } from './kamper-constants'
 
 export type StatEvent = {
   type: MatchEventType
@@ -7,6 +7,7 @@ export type StatEvent = {
   assistPlayerId: string | null
   faultType: TechnicalFaultType | null
   punishment: Punishment | null
+  shotPosition?: ShotPosition | null
 }
 
 export type StatPlayer = {
@@ -145,4 +146,31 @@ export function computeStats(events: StatEvent[], players: StatPlayer[]): MatchS
   })
 
   return { ourScore, opponentScore, players: Array.from(rows.values()) }
+}
+
+export type PositionRow = {
+  position: ShotPosition
+  shots: number
+  goals: number
+  shootingPct: number | null
+}
+
+export function computePositionStats(events: StatEvent[]): PositionRow[] {
+  const rows = new Map<ShotPosition, PositionRow>()
+  for (const p of SHOT_POSITION_ORDER) rows.set(p, { position: p, shots: 0, goals: 0, shootingPct: null })
+
+  for (const e of events) {
+    if (!e.shotPosition) continue
+    if (e.type !== 'GOAL' && e.type !== 'SHOT_SAVED' && e.type !== 'SHOT_MISSED') continue
+    const row = rows.get(e.shotPosition)
+    if (!row) continue
+    row.shots++
+    if (e.type === 'GOAL') row.goals++
+  }
+
+  Array.from(rows.values()).forEach(row => {
+    row.shootingPct = row.shots > 0 ? Math.round((row.goals / row.shots) * 1000) / 10 : null
+  })
+
+  return Array.from(rows.values())
 }

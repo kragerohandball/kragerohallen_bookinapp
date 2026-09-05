@@ -3,7 +3,8 @@ import { useEffect, useState } from 'react'
 import SiteHeader from '@/components/SiteHeader'
 import { useSiteSettings } from '@/components/SiteSettingsContext'
 import { getSeasonForDate } from '@/lib/season'
-import type { PlayerRow } from '@/lib/kamper-stats'
+import type { PlayerRow, PositionRow } from '@/lib/kamper-stats'
+import { SHOT_POSITION_LABELS } from '@/lib/kamper-constants'
 
 type Team = { id: string; name: string }
 type Stats = {
@@ -16,6 +17,7 @@ type Stats = {
   goalsFor: number
   goalsAgainst: number
   players: PlayerRow[]
+  positions: PositionRow[]
 }
 
 const inputCls = "bg-[#1a1a1a] border border-gray-600 text-white rounded-lg px-3 py-2 text-sm focus:outline-none"
@@ -159,6 +161,35 @@ export default function StatistikkPage() {
                     ))}
                     {keepers.length === 0 && (
                       <tr><td colSpan={5} className="px-3 py-6 text-center text-gray-500">Ingen data</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <section className="bg-[#2a2a2a] rounded-xl border border-gray-700 overflow-hidden">
+              <h3 className="font-semibold text-white px-4 pt-4">Skudd etter posisjon</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm mt-2">
+                  <thead className="bg-[#111] border-b border-gray-700">
+                    <tr>
+                      <th className="text-left px-3 py-2 font-medium text-gray-400">Posisjon</th>
+                      <th className="text-right px-3 py-2 font-medium text-gray-400">Skudd</th>
+                      <th className="text-right px-3 py-2 font-medium text-gray-400">Mål</th>
+                      <th className="text-right px-3 py-2 font-medium text-gray-400">Skudd%</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-700">
+                    {stats.positions.filter(p => p.shots > 0).map(p => (
+                      <tr key={p.position}>
+                        <td className="px-3 py-2 text-white">{SHOT_POSITION_LABELS[p.position]}</td>
+                        <td className="px-3 py-2 text-right text-gray-400">{p.shots}</td>
+                        <td className="px-3 py-2 text-right text-white">{p.goals}</td>
+                        <td className="px-3 py-2 text-right text-gray-400">{p.shootingPct != null ? `${p.shootingPct}%` : '–'}</td>
+                      </tr>
+                    ))}
+                    {stats.positions.every(p => p.shots === 0) && (
+                      <tr><td colSpan={4} className="px-3 py-6 text-center text-gray-500">Ingen data</td></tr>
                     )}
                   </tbody>
                 </table>

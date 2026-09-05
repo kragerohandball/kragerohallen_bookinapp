@@ -4,10 +4,12 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth-options'
 import { prisma } from '@/lib/prisma'
 import { sendBookingConfirmationEmail } from '@/lib/email'
+import { hasBookingAccess } from '@/lib/access'
 
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'Ikke innlogget' }, { status: 401 })
+  if (!hasBookingAccess(session.user)) return NextResponse.json({ error: 'Ingen tilgang til booking' }, { status: 403 })
 
   const { searchParams } = new URL(req.url)
   const roomId = searchParams.get('roomId')
@@ -38,6 +40,7 @@ export async function POST(req: Request) {
   if (session.user.status !== 'APPROVED') {
     return NextResponse.json({ error: 'Brukeren er ikke godkjent' }, { status: 403 })
   }
+  if (!hasBookingAccess(session.user)) return NextResponse.json({ error: 'Ingen tilgang til booking' }, { status: 403 })
 
   const { roomId, date, startHour, endHour, notes } = await req.json()
 

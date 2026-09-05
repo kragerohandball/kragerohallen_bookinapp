@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth-options'
 import { prisma } from '@/lib/prisma'
+import { hasKamperAccess } from '@/lib/access'
 
 export async function PATCH(req: Request, { params }: { params: { playerId: string } }) {
   const session = await getServerSession(authOptions)
@@ -10,6 +11,7 @@ export async function PATCH(req: Request, { params }: { params: { playerId: stri
   if (session.user.status !== 'APPROVED') {
     return NextResponse.json({ error: 'Brukeren er ikke godkjent' }, { status: 403 })
   }
+  if (!hasKamperAccess(session.user)) return NextResponse.json({ error: 'Ingen tilgang til kamper' }, { status: 403 })
 
   const body = await req.json()
   const data: { name?: string; number?: number | null; isGoalkeeper?: boolean; active?: boolean } = {}
@@ -31,6 +33,7 @@ export async function DELETE(req: Request, { params }: { params: { playerId: str
   if (session.user.status !== 'APPROVED') {
     return NextResponse.json({ error: 'Brukeren er ikke godkjent' }, { status: 403 })
   }
+  if (!hasKamperAccess(session.user)) return NextResponse.json({ error: 'Ingen tilgang til kamper' }, { status: 403 })
 
   const player = await prisma.player.findUnique({ where: { id: params.playerId } })
   if (!player) return NextResponse.json({ error: 'Fant ikke spiller' }, { status: 404 })

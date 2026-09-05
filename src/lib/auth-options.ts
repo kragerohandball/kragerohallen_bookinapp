@@ -32,6 +32,8 @@ export const authOptions: NextAuthOptions = {
           role: user.role,
           status: user.status,
           mustChangePassword: user.mustChangePassword,
+          bookingAccess: user.bookingAccess,
+          kamperAccess: user.kamperAccess,
         }
       },
     }),
@@ -43,6 +45,8 @@ export const authOptions: NextAuthOptions = {
         token.role = user.role
         token.status = user.status
         token.mustChangePassword = user.mustChangePassword
+        token.bookingAccess = user.bookingAccess
+        token.kamperAccess = user.kamperAccess
       }
       return token
     },
@@ -52,6 +56,8 @@ export const authOptions: NextAuthOptions = {
         session.user.role = token.role
         session.user.status = token.status
         session.user.mustChangePassword = token.mustChangePassword
+        session.user.bookingAccess = token.bookingAccess
+        session.user.kamperAccess = token.kamperAccess
       }
       return session
     },

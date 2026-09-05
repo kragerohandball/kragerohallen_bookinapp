@@ -8,6 +8,7 @@ import { useSiteSettings } from '@/components/SiteSettingsContext'
 type User = {
   id: string; name: string; email: string; phone: string
   group: string; role: string; status: string; createdAt: string
+  bookingAccess: boolean; kamperAccess: boolean
 }
 type Booking = {
   id: string; startTime: string; endTime: string; notes?: string; isBlocked: boolean
@@ -38,7 +39,7 @@ export default function AdminPage() {
   const [approvedUser, setApprovedUser] = useState<{ name: string; email: string; password: string } | null>(null)
 
   // Legg til bruker manuelt
-  const [newUser, setNewUser] = useState({ name: '', email: '', phone: '', group: '' })
+  const [newUser, setNewUser] = useState({ name: '', email: '', phone: '', group: '', bookingAccess: true, kamperAccess: false })
   const [newUserSubmitting, setNewUserSubmitting] = useState(false)
   const [createdUsers, setCreatedUsers] = useState<CreatedUser[]>([])
 
@@ -46,6 +47,11 @@ export default function AdminPage() {
   const [importFile, setImportFile] = useState<File | null>(null)
   const [importSubmitting, setImportSubmitting] = useState(false)
   const [importResults, setImportResults] = useState<CreatedUser[]>([])
+  const [importBookingAccess, setImportBookingAccess] = useState(true)
+  const [importKamperAccess, setImportKamperAccess] = useState(false)
+
+  // Tilgang for ventende brukere (ved godkjenning)
+  const [pendingAccess, setPendingAccess] = useState<Record<string, { bookingAccess: boolean; kamperAccess: boolean }>>({})
 
   // New booking form
   const [nbRoom, setNbRoom] = useState(ROOMS[0].id)
@@ -67,7 +73,7 @@ export default function AdminPage() {
   useEffect(() => {
     if (tab === 'godkjenning' || tab === 'ny-booking') fetchUsers()
     if (tab === 'bookinger') fetchBookings()
-    if (tab === 'legg-til') { setCreatedUsers([]); setNewUser({ name: '', email: '', phone: '', group: '' }) }
+    if (tab === 'legg-til') { setCreatedUsers([]); setNewUser({ name: '', email: '', phone: '', group: '', bookingAccess: true, kamperAccess: false }) }
     if (tab === 'importer') { setImportResults([]); setImportFile(null) }
   }, [tab])
 
@@ -83,10 +89,11 @@ export default function AdminPage() {
 
   async function handleUserAction(userId: string, action: 'approve' | 'reject') {
     setLoading(true)
+    const access = pendingAccess[userId] ?? { bookingAccess: true, kamperAccess: false }
     const res = await fetch(`/api/admin/users/${userId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action }),
+      body: JSON.stringify(action === 'approve' ? { action, ...access } : { action }),
     })
     const data = await res.json()
     if (res.ok) {
@@ -102,6 +109,15 @@ export default function AdminPage() {
     }
     setLoading(false)
     setTimeout(() => setMsg(null), 4000)
+  }
+
+  async function handleToggleUserAccess(user: User, field: 'bookingAccess' | 'kamperAccess') {
+    await fetch(`/api/admin/users/${user.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ [field]: !user[field] }),
+    })
+    fetchUsers()
   }
 
   async function handleDeleteUser(userId: string, name: string) {
@@ -151,7 +167,7 @@ export default function AdminPage() {
     const data = await res.json()
     if (res.ok) {
       setCreatedUsers(prev => [...prev, { name: data.name, email: data.email, group: newUser.group, password: data.password }])
-      setNewUser({ name: '', email: '', phone: '', group: '' })
+      setNewUser({ name: '', email: '', phone: '', group: '', bookingAccess: true, kamperAccess: false })
     } else {
       setMsg({ type: 'error', text: data.error })
       setTimeout(() => setMsg(null), 4000)
@@ -165,6 +181,8 @@ export default function AdminPage() {
     setImportSubmitting(true)
     const form = new FormData()
     form.append('file', importFile)
+    form.append('bookingAccess', String(importBookingAccess))
+    form.append('kamperAccess', String(importKamperAccess))
     const res = await fetch('/api/admin/import-users', { method: 'POST', body: form })
     const data = await res.json()
     if (res.ok) setImportResults(data.results)
@@ -253,14 +271,27 @@ export default function AdminPage() {
                   Ventende ({pendingUsers.length})
                 </h3>
                 <div className="space-y-2">
-                  {pendingUsers.map(u => (
+                  {pendingUsers.map(u => {
+                    const access = pendingAccess[u.id] ?? { bookingAccess: true, kamperAccess: false }
+                    function setAccess(patch: Partial<typeof access>) {
+                      setPendingAccess(prev => ({ ...prev, [u.id]: { ...access, ...patch } }))
+                    }
+                    return (
                     <div key={u.id} className="bg-[#2a2a2a] rounded-xl border border-gray-700 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div>
                         <div className="font-medium text-white">{u.name}</div>
                         <div className="text-sm text-gray-400">{u.email} • {u.phone}</div>
                         <div className="text-sm text-gray-500">{u.group}</div>
                       </div>
-                      <div className="flex gap-2 shrink-0">
+                      <div className="flex items-center gap-3 shrink-0">
+                        <label className="flex items-center gap-1.5 text-xs text-gray-300">
+                          <input type="checkbox" checked={access.bookingAccess} onChange={e => setAccess({ bookingAccess: e.target.checked })} />
+                          Booking
+                        </label>
+                        <label className="flex items-center gap-1.5 text-xs text-gray-300">
+                          <input type="checkbox" checked={access.kamperAccess} onChange={e => setAccess({ kamperAccess: e.target.checked })} />
+                          Kamper
+                        </label>
                         <button
                           onClick={() => handleUserAction(u.id, 'approve')}
                           disabled={loading}
@@ -277,7 +308,8 @@ export default function AdminPage() {
                         </button>
                       </div>
                     </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
             )}
@@ -294,6 +326,7 @@ export default function AdminPage() {
                         <th className="text-left px-4 py-2 font-medium text-gray-400">Navn</th>
                         <th className="text-left px-4 py-2 font-medium text-gray-400 hidden sm:table-cell">E-post</th>
                         <th className="text-left px-4 py-2 font-medium text-gray-400 hidden md:table-cell">Gruppe</th>
+                        <th className="text-left px-4 py-2 font-medium text-gray-400">Tilgang</th>
                         <th className="px-4 py-2"></th>
                       </tr>
                     </thead>
@@ -303,6 +336,22 @@ export default function AdminPage() {
                           <td className="px-4 py-2 font-medium text-white">{u.name}</td>
                           <td className="px-4 py-2 text-gray-400 hidden sm:table-cell">{u.email}</td>
                           <td className="px-4 py-2 text-gray-500 hidden md:table-cell">{u.group}</td>
+                          <td className="px-4 py-2">
+                            <div className="flex gap-1.5">
+                              <button
+                                onClick={() => handleToggleUserAccess(u, 'bookingAccess')}
+                                className={`text-xs px-2 py-0.5 rounded-full border ${u.bookingAccess ? 'bg-green-900/40 text-green-300 border-green-700' : 'bg-transparent text-gray-500 border-gray-600'}`}
+                              >
+                                Booking
+                              </button>
+                              <button
+                                onClick={() => handleToggleUserAccess(u, 'kamperAccess')}
+                                className={`text-xs px-2 py-0.5 rounded-full border ${u.kamperAccess ? 'bg-green-900/40 text-green-300 border-green-700' : 'bg-transparent text-gray-500 border-gray-600'}`}
+                              >
+                                Kamper
+                              </button>
+                            </div>
+                          </td>
                           <td className="px-4 py-2 text-right">
                             <button onClick={() => handleDeleteUser(u.id, u.name)} className="text-red-400 hover:text-red-300 text-xs">Slett</button>
                           </td>
@@ -408,6 +457,19 @@ export default function AdminPage() {
                   />
                 </div>
               ))}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Tilgang</label>
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-1.5 text-sm text-gray-300">
+                    <input type="checkbox" checked={newUser.bookingAccess} onChange={e => setNewUser(p => ({ ...p, bookingAccess: e.target.checked }))} />
+                    Booking
+                  </label>
+                  <label className="flex items-center gap-1.5 text-sm text-gray-300">
+                    <input type="checkbox" checked={newUser.kamperAccess} onChange={e => setNewUser(p => ({ ...p, kamperAccess: e.target.checked }))} />
+                    Kamper/statistikk
+                  </label>
+                </div>
+              </div>
               <button type="submit" disabled={newUserSubmitting}
                 className="bg-[#FFD400] hover:bg-[#e6be00] disabled:bg-[#FFD400]/40 text-black font-bold text-sm px-5 py-2 rounded-lg">
                 {newUserSubmitting ? 'Oppretter...' : 'Opprett bruker'}
@@ -448,6 +510,19 @@ export default function AdminPage() {
                   onChange={e => setImportFile(e.target.files?.[0] ?? null)}
                   className="w-full text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-[#FFD400] file:text-black hover:file:bg-[#e6be00] cursor-pointer"
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Tilgang (gjelder alle i filen)</label>
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-1.5 text-sm text-gray-300">
+                    <input type="checkbox" checked={importBookingAccess} onChange={e => setImportBookingAccess(e.target.checked)} />
+                    Booking
+                  </label>
+                  <label className="flex items-center gap-1.5 text-sm text-gray-300">
+                    <input type="checkbox" checked={importKamperAccess} onChange={e => setImportKamperAccess(e.target.checked)} />
+                    Kamper/statistikk
+                  </label>
+                </div>
               </div>
               <button type="submit" disabled={importSubmitting || !importFile}
                 className="bg-[#FFD400] hover:bg-[#e6be00] disabled:bg-[#FFD400]/40 text-black font-bold text-sm px-5 py-2 rounded-lg">

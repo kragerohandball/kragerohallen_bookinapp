@@ -16,6 +16,8 @@ export async function POST(req: Request) {
   const formData = await req.formData()
   const file = formData.get('file') as File | null
   if (!file) return NextResponse.json({ error: 'Ingen fil lastet opp' }, { status: 400 })
+  const bookingAccess = formData.get('bookingAccess') !== 'false'
+  const kamperAccess = formData.get('kamperAccess') === 'true'
 
   const buffer = Buffer.from(await file.arrayBuffer())
   const workbook = XLSX.read(buffer, { type: 'buffer' })
@@ -53,6 +55,8 @@ export async function POST(req: Request) {
         status: 'APPROVED',
         password: hashed,
         mustChangePassword: true,
+        bookingAccess,
+        kamperAccess,
       },
     })
 

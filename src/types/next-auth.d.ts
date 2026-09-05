@@ -7,6 +7,8 @@ declare module 'next-auth' {
       role: string
       status: string
       mustChangePassword: boolean
+      bookingAccess: boolean
+      kamperAccess: boolean
     } & DefaultSession['user']
   }
   interface User {
@@ -14,6 +16,8 @@ declare module 'next-auth' {
     role: string
     status: string
     mustChangePassword: boolean
+    bookingAccess: boolean
+    kamperAccess: boolean
   }
 }
 
@@ -23,5 +27,7 @@ declare module 'next-auth/jwt' {
     role: string
     status: string
     mustChangePassword: boolean
+    bookingAccess: boolean
+    kamperAccess: boolean
   }
 }

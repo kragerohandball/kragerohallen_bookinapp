@@ -1,15 +1,16 @@
 'use client'
 import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'next/navigation'
-import type { GoalZone, MatchEventType, MatchStatus, Punishment, TechnicalFaultType } from '@prisma/client'
+import type { GoalZone, MatchEventType, MatchStatus, Punishment, ShotPosition, TechnicalFaultType } from '@prisma/client'
 import SiteHeader from '@/components/SiteHeader'
 import { useSiteSettings } from '@/components/SiteSettingsContext'
 import GoalZoneGrid from '@/components/GoalZoneGrid'
+import CourtPositionPicker from '@/components/CourtPositionPicker'
 import PlayerPicker, { type PlayerLite } from '@/components/PlayerPicker'
-import { computeStats } from '@/lib/kamper-stats'
+import { computeStats, computePositionStats } from '@/lib/kamper-stats'
 import {
   EVENT_TYPE_LABELS, FAULT_TYPE_LABELS, FAULT_TYPE_ORDER,
-  MATCH_STATUS_LABELS, PUNISHMENT_LABELS, PUNISHMENT_ORDER, ZONE_LABELS,
+  MATCH_STATUS_LABELS, PUNISHMENT_LABELS, PUNISHMENT_ORDER, SHOT_POSITION_LABELS, ZONE_LABELS,
 } from '@/lib/kamper-constants'
 
 type RosterPlayer = PlayerLite & { active: boolean; position: string | null }
@@ -22,6 +23,7 @@ type MatchEventRow = {
   playerId: string | null
   assistPlayerId: string | null
   zone: GoalZone | null
+  shotPosition: ShotPosition | null
   faultType: TechnicalFaultType | null
   punishment: Punishment | null
   player: EventPlayerRef | null
@@ -48,6 +50,7 @@ type Flow = {
   playerId?: string
   assistPlayerId?: string | null
   zone?: GoalZone
+  shotPosition?: ShotPosition
   faultType?: TechnicalFaultType
   punishment?: Punishment
 }
@@ -60,6 +63,7 @@ function describeEvent(e: MatchEventRow): string {
   if (e.type === 'GOAL' && e.assistPlayer) text += `, assist ${e.assistPlayer.name}`
   if (e.type === 'TECHNICAL_FAULT' && e.faultType) text += ` (${FAULT_TYPE_LABELS[e.faultType]})`
   if (e.type === 'DEFENSIVE_FOUL' && e.punishment && e.punishment !== 'NONE') text += ` – ${PUNISHMENT_LABELS[e.punishment]}`
+  if (e.shotPosition) text += ` · ${SHOT_POSITION_LABELS[e.shotPosition]}`
   if (e.zone) text += ` · ${ZONE_LABELS[e.zone]}`
   return text
 }
@@ -127,6 +131,7 @@ export default function MatchConsolePage() {
         playerId: f.playerId ?? null,
         assistPlayerId: f.assistPlayerId ?? null,
         zone: f.zone ?? null,
+        shotPosition: f.shotPosition ?? null,
         faultType: f.faultType ?? null,
         punishment: f.punishment ?? null,
       }),
@@ -146,14 +151,17 @@ export default function MatchConsolePage() {
     switch (next.type) {
       case 'GOAL':
         if (next.step === 'player') { setFlow({ ...next, step: 'assist' }); return }
-        if (next.step === 'assist') { setFlow({ ...next, step: 'zone' }); return }
+        if (next.step === 'assist') { setFlow({ ...next, step: 'shotPosition' }); return }
+        if (next.step === 'shotPosition') { setFlow({ ...next, step: 'zone' }); return }
         submitEvent(next)
         return
       case 'SHOT_SAVED':
-        if (next.step === 'player') { setFlow({ ...next, step: 'zone' }); return }
+        if (next.step === 'player') { setFlow({ ...next, step: 'shotPosition' }); return }
+        if (next.step === 'shotPosition') { setFlow({ ...next, step: 'zone' }); return }
         submitEvent(next)
         return
       case 'SHOT_MISSED':
+        if (next.step === 'player') { setFlow({ ...next, step: 'shotPosition' }); return }
         submitEvent(next)
         return
       case 'TECHNICAL_FAULT':
@@ -230,6 +238,11 @@ export default function MatchConsolePage() {
   const stats = useMemo(() => {
     if (!match) return null
     return computeStats(match.events, match.team.players)
+  }, [match])
+
+  const positionStats = useMemo(() => {
+    if (!match) return null
+    return computePositionStats(match.events).filter(p => p.shots > 0)
   }, [match])
 
   function elapsedSeconds(): number {
@@ -379,6 +392,34 @@ export default function MatchConsolePage() {
           </div>
         )}
 
+        {(showStats || isFinished) && positionStats && positionStats.length > 0 && (
+          <div className="bg-[#2a2a2a] rounded-xl border border-gray-700 overflow-hidden">
+            <h3 className="font-semibold text-white px-4 pt-4">Skudd etter posisjon</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm mt-2">
+                <thead className="bg-[#111] border-b border-gray-700">
+                  <tr>
+                    <th className="text-left px-3 py-2 font-medium text-gray-400">Posisjon</th>
+                    <th className="text-right px-3 py-2 font-medium text-gray-400">Skudd</th>
+                    <th className="text-right px-3 py-2 font-medium text-gray-400">Mål</th>
+                    <th className="text-right px-3 py-2 font-medium text-gray-400">Skudd%</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-700">
+                  {positionStats.map(p => (
+                    <tr key={p.position}>
+                      <td className="px-3 py-2 text-white">{SHOT_POSITION_LABELS[p.position]}</td>
+                      <td className="px-3 py-2 text-right text-gray-400">{p.shots}</td>
+                      <td className="px-3 py-2 text-right text-white">{p.goals}</td>
+                      <td className="px-3 py-2 text-right text-gray-400">{p.shootingPct != null ? `${p.shootingPct}%` : '–'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         {/* Siste hendelser */}
         <div className="bg-[#2a2a2a] rounded-xl border border-gray-700 p-4 space-y-2">
           <h3 className="font-semibold text-white">Siste hendelser</h3>
@@ -436,6 +477,10 @@ export default function MatchConsolePage() {
                   onSelect={playerId => advance({ playerId })}
                 />
               </>
+            )}
+
+            {flow.step === 'shotPosition' && (
+              <CourtPositionPicker primaryColor={primaryColor} onSelect={shotPosition => advance({ shotPosition })} />
             )}
 
             {flow.step === 'zone' && (

@@ -3,11 +3,13 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth-options'
 import { prisma } from '@/lib/prisma'
-import { computeStats, type StatEvent } from '@/lib/kamper-stats'
+import { computeStats, computePositionStats, type StatEvent } from '@/lib/kamper-stats'
+import { hasKamperAccess } from '@/lib/access'
 
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: 'Ikke innlogget' }, { status: 401 })
+  if (!hasKamperAccess(session.user)) return NextResponse.json({ error: 'Ingen tilgang til kamper' }, { status: 403 })
 
   const { searchParams } = new URL(req.url)
   const teamId = searchParams.get('teamId')
@@ -52,6 +54,7 @@ export async function GET(req: Request) {
   }
 
   const stats = computeStats(allEvents, players)
+  const positionStats = computePositionStats(allEvents)
 
   return NextResponse.json({
     team,
@@ -63,5 +66,6 @@ export async function GET(req: Request) {
     goalsFor,
     goalsAgainst,
     players: stats.players,
+    positions: positionStats,
   })
 }

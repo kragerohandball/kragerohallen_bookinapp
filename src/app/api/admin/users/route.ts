@@ -15,6 +15,7 @@ export async function GET() {
     select: {
       id: true, name: true, email: true, phone: true,
       group: true, role: true, status: true, createdAt: true,
+      bookingAccess: true, kamperAccess: true,
     },
   })
 

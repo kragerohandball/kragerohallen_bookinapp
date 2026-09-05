@@ -16,7 +16,7 @@ export async function PATCH(
     return NextResponse.json({ error: 'Ikke tilgang' }, { status: 403 })
   }
 
-  const { action } = await req.json() // 'approve' | 'reject'
+  const { action, bookingAccess, kamperAccess } = await req.json() // 'approve' | 'reject' | undefined
 
   const user = await prisma.user.findUnique({ where: { id: params.id } })
   if (!user) return NextResponse.json({ error: 'Bruker ikke funnet' }, { status: 404 })
@@ -27,7 +27,13 @@ export async function PATCH(
 
     await prisma.user.update({
       where: { id: params.id },
-      data: { status: 'APPROVED', password: hashed, mustChangePassword: true },
+      data: {
+        status: 'APPROVED',
+        password: hashed,
+        mustChangePassword: true,
+        bookingAccess: bookingAccess !== false,
+        kamperAccess: kamperAccess === true,
+      },
     })
 
     return NextResponse.json({ ok: true, password: plainPassword })
@@ -46,6 +52,15 @@ export async function PATCH(
     }
 
     return NextResponse.json({ ok: true })
+  }
+
+  if (action == null && (bookingAccess !== undefined || kamperAccess !== undefined)) {
+    const data: { bookingAccess?: boolean; kamperAccess?: boolean } = {}
+    if (bookingAccess !== undefined) data.bookingAccess = !!bookingAccess
+    if (kamperAccess !== undefined) data.kamperAccess = !!kamperAccess
+
+    const updated = await prisma.user.update({ where: { id: params.id }, data })
+    return NextResponse.json({ ok: true, bookingAccess: updated.bookingAccess, kamperAccess: updated.kamperAccess })
   }
 
   return NextResponse.json({ error: 'Ugyldig handling' }, { status: 400 })

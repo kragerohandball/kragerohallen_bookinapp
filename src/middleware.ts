@@ -1,5 +1,6 @@
 import { withAuth } from 'next-auth/middleware'
 import { NextResponse } from 'next/server'
+import { hasBookingAccess, hasKamperAccess } from '@/lib/access'
 
 export default withAuth(
   function middleware(req) {
@@ -12,6 +13,14 @@ export default withAuth(
 
     if (pathname.startsWith('/admin') && token?.role !== 'ADMIN') {
       return NextResponse.redirect(new URL('/booking', req.url))
+    }
+
+    if (token && pathname.startsWith('/booking') && !hasBookingAccess(token)) {
+      return NextResponse.redirect(new URL(hasKamperAccess(token) ? '/kamper' : '/login', req.url))
+    }
+
+    if (token && pathname.startsWith('/kamper') && !hasKamperAccess(token)) {
+      return NextResponse.redirect(new URL(hasBookingAccess(token) ? '/booking' : '/login', req.url))
     }
   },
   {

@@ -17,6 +17,8 @@ model User {
   mustChangePassword Boolean  @default(false)
   role              Role     @default(USER)
   status            Status   @default(PENDING)
+  bookingAccess     Boolean  @default(true)
+  kamperAccess      Boolean  @default(false)
   createdAt DateTime  @default(now())
   bookings  Booking[]
 }
@@ -120,6 +122,7 @@ model MatchEvent {
   playerId       String?
   assistPlayerId String?
   zone           GoalZone?
+  shotPosition   ShotPosition?
   faultType      TechnicalFaultType?
   punishment     Punishment?
   createdAt      DateTime            @default(now())
@@ -172,4 +175,15 @@ enum GoalZone {
   BL
   BC
   BR
+}
+
+enum ShotPosition {
+  LEFT_WING
+  LEFT_BACK
+  CENTER_BACK
+  RIGHT_BACK
+  RIGHT_WING
+  PIVOT
+  SEVEN_METER
+  FAST_BREAK
 }

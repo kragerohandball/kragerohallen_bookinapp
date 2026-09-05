@@ -1,4 +1,4 @@
-import type { GoalZone, MatchEventType, Punishment, TechnicalFaultType } from '@prisma/client'
+import type { GoalZone, MatchEventType, Punishment, ShotPosition, TechnicalFaultType } from '@prisma/client'
 
 export const EVENT_TYPE_LABELS: Record<MatchEventType, string> = {
   GOAL: 'Mål',
@@ -38,6 +38,21 @@ export const ZONE_LABELS: Record<GoalZone, string> = {
 }
 
 export const ZONE_ORDER: GoalZone[] = ['TL', 'TC', 'TR', 'ML', 'MC', 'MR', 'BL', 'BC', 'BR']
+
+export const SHOT_POSITION_LABELS: Record<ShotPosition, string> = {
+  LEFT_WING: 'Venstre kant',
+  LEFT_BACK: 'Venstre bak',
+  CENTER_BACK: 'Midtback',
+  RIGHT_BACK: 'Høyre bak',
+  RIGHT_WING: 'Høyre kant',
+  PIVOT: 'Strek',
+  SEVEN_METER: '7-meter',
+  FAST_BREAK: 'Gjennombrudd/kontring',
+}
+
+export const SHOT_POSITION_ORDER: ShotPosition[] = [
+  'LEFT_WING', 'LEFT_BACK', 'CENTER_BACK', 'RIGHT_BACK', 'RIGHT_WING', 'PIVOT', 'SEVEN_METER', 'FAST_BREAK',
+]
 
 export const FAULT_TYPE_ORDER: TechnicalFaultType[] = ['STEPS', 'CHARGING', 'DOUBLE_DRIBBLE', 'PASSIVE', 'OTHER']
 

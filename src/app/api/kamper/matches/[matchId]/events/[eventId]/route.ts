@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth-options'
 import { prisma } from '@/lib/prisma'
+import { hasKamperAccess } from '@/lib/access'
 
 export async function DELETE(req: Request, { params }: { params: { matchId: string; eventId: string } }) {
   const session = await getServerSession(authOptions)
@@ -10,6 +11,7 @@ export async function DELETE(req: Request, { params }: { params: { matchId: stri
   if (session.user.status !== 'APPROVED') {
     return NextResponse.json({ error: 'Brukeren er ikke godkjent' }, { status: 403 })
   }
+  if (!hasKamperAccess(session.user)) return NextResponse.json({ error: 'Ingen tilgang til kamper' }, { status: 403 })
 
   const event = await prisma.matchEvent.findUnique({ where: { id: params.eventId } })
   if (!event || event.matchId !== params.matchId) {

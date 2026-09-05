@@ -12,7 +12,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Ikke tilgang' }, { status: 403 })
   }
 
-  const { name, email, phone, group } = await req.json()
+  const { name, email, phone, group, bookingAccess, kamperAccess } = await req.json()
   if (!name || !email || !group) {
     return NextResponse.json({ error: 'Navn, e-post og gruppe er påkrevd' }, { status: 400 })
   }
@@ -34,6 +34,8 @@ export async function POST(req: Request) {
       status: 'APPROVED',
       password: hashed,
       mustChangePassword: true,
+      bookingAccess: bookingAccess !== false,
+      kamperAccess: kamperAccess === true,
     },
   })
 
