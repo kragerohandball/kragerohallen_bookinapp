@@ -114,8 +114,8 @@ export default function StatistikkPage() {
                       <th className="text-left px-3 py-2 font-medium text-gray-400">Navn</th>
                       <th className="text-right px-3 py-2 font-medium text-gray-400">Mål</th>
                       <th className="text-right px-3 py-2 font-medium text-gray-400">Assist</th>
+                      <th className="text-right px-3 py-2 font-medium text-gray-400">Skudd%</th>
                       <th className="text-right px-3 py-2 font-medium text-gray-400 hidden sm:table-cell">Skudd</th>
-                      <th className="text-right px-3 py-2 font-medium text-gray-400 hidden sm:table-cell">Skudd%</th>
                       <th className="text-right px-3 py-2 font-medium text-gray-400 hidden md:table-cell">Tekn. feil</th>
                       <th className="text-right px-3 py-2 font-medium text-gray-400 hidden md:table-cell">Forsvarsfeil</th>
                       <th className="text-right px-3 py-2 font-medium text-gray-400 hidden lg:table-cell">Snapp</th>
@@ -132,8 +132,8 @@ export default function StatistikkPage() {
                         <td className="px-3 py-2 text-white">{p.name}</td>
                         <td className="px-3 py-2 text-right text-white">{p.goals}</td>
                         <td className="px-3 py-2 text-right text-white">{p.assists}</td>
+                        <td className="px-3 py-2 text-right text-gray-400">{p.shootingPct != null ? `${p.shootingPct}%` : '–'}</td>
                         <td className="px-3 py-2 text-right text-gray-400 hidden sm:table-cell">{p.shotsTotal}</td>
-                        <td className="px-3 py-2 text-right text-gray-400 hidden sm:table-cell">{p.shootingPct != null ? `${p.shootingPct}%` : '–'}</td>
                         <td className="px-3 py-2 text-right text-gray-400 hidden md:table-cell">{p.technicalFaults}</td>
                         <td className="px-3 py-2 text-right text-gray-400 hidden md:table-cell">{p.defensiveFouls}</td>
                         <td className="px-3 py-2 text-right text-gray-400 hidden lg:table-cell">{p.steals}</td>

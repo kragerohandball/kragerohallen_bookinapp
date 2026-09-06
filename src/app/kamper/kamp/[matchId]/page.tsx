@@ -393,6 +393,7 @@ export default function MatchConsolePage() {
                     <th className="text-left px-3 py-2 font-medium text-gray-400">Navn</th>
                     <th className="text-right px-3 py-2 font-medium text-gray-400">Mål</th>
                     <th className="text-right px-3 py-2 font-medium text-gray-400">Assist</th>
+                    <th className="text-right px-3 py-2 font-medium text-gray-400">Uttelling%</th>
                     <th className="text-right px-3 py-2 font-medium text-gray-400 hidden sm:table-cell">Red./Bakl.</th>
                     <th className="text-right px-3 py-2 font-medium text-gray-400 hidden sm:table-cell">Feil</th>
                     <th className="text-right px-3 py-2 font-medium text-gray-400 hidden sm:table-cell">Snapp/Frikast</th>
@@ -405,6 +406,9 @@ export default function MatchConsolePage() {
                       <td className="px-3 py-2 text-white">{p.name}</td>
                       <td className="px-3 py-2 text-right text-white">{p.goals}</td>
                       <td className="px-3 py-2 text-right text-white">{p.assists}</td>
+                      <td className="px-3 py-2 text-right text-gray-400">
+                        {p.isGoalkeeper ? (p.savePct != null ? `${p.savePct}%` : '–') : (p.shootingPct != null ? `${p.shootingPct}%` : '–')}
+                      </td>
                       <td className="px-3 py-2 text-right text-gray-400 hidden sm:table-cell">{p.isGoalkeeper ? `${p.saves}/${p.goalsConceded}` : '–'}</td>
                       <td className="px-3 py-2 text-right text-gray-400 hidden sm:table-cell">{p.technicalFaults + p.defensiveFouls}</td>
                       <td className="px-3 py-2 text-right text-gray-400 hidden sm:table-cell">{p.steals}/{p.freeThrowsWon}</td>
