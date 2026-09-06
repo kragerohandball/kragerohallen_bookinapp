@@ -297,7 +297,7 @@ export default function MatchConsolePage() {
     { type: 'SHOT_SAVED', label: 'Skudd reddet', category: 'skudd' },
     { type: 'SHOT_MISSED', label: 'Skudd utenfor', category: 'skudd' },
     { type: 'TECHNICAL_FAULT', label: 'Teknisk feil', category: 'feil' },
-    { type: 'DEFENSIVE_FOUL', label: 'Forsvarsfeil/kort', category: 'feil' },
+    { type: 'DEFENSIVE_FOUL', label: 'Bestrafning', category: 'feil' },
     { type: 'STEAL', label: 'Snappet ball', category: 'forsvar' },
     { type: 'FREE_THROW_WON', label: 'Vunnet frikast', category: 'forsvar' },
     { type: 'SAVE', label: 'Redning', category: 'keeper' },
