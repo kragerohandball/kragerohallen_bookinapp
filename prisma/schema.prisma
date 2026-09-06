@@ -148,6 +148,8 @@ enum MatchEventType {
   DEFENSIVE_FOUL
   GOAL_CONCEDED
   SAVE
+  STEAL
+  FREE_THROW_WON
 }
 
 enum TechnicalFaultType {

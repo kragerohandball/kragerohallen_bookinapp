@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth-options'
 import { prisma } from '@/lib/prisma'
-import { computeStats, computePositionStats, type StatEvent } from '@/lib/kamper-stats'
+import { computeStats, computePositionStats, computeZoneStats, type StatEvent } from '@/lib/kamper-stats'
 import { hasKamperAccess } from '@/lib/access'
 
 export async function GET(req: Request) {
@@ -55,6 +55,7 @@ export async function GET(req: Request) {
 
   const stats = computeStats(allEvents, players)
   const positionStats = computePositionStats(allEvents)
+  const zoneStats = computeZoneStats(allEvents)
 
   return NextResponse.json({
     team,
@@ -67,5 +68,6 @@ export async function GET(req: Request) {
     goalsAgainst,
     players: stats.players,
     positions: positionStats,
+    zones: zoneStats,
   })
 }

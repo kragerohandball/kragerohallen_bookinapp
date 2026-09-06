@@ -1,5 +1,5 @@
-import type { MatchEventType, Punishment, ShotPosition, TechnicalFaultType } from '@prisma/client'
-import { FAULT_TYPE_ORDER, SHOT_POSITION_ORDER } from './kamper-constants'
+import type { GoalZone, MatchEventType, Punishment, ShotPosition, TechnicalFaultType } from '@prisma/client'
+import { FAULT_TYPE_ORDER, SHOT_POSITION_ORDER, ZONE_ORDER } from './kamper-constants'
 
 export type StatEvent = {
   type: MatchEventType
@@ -8,6 +8,7 @@ export type StatEvent = {
   faultType: TechnicalFaultType | null
   punishment: Punishment | null
   shotPosition?: ShotPosition | null
+  zone?: GoalZone | null
 }
 
 export type StatPlayer = {
@@ -36,6 +37,8 @@ export type PlayerRow = {
   saves: number
   goalsConceded: number
   savePct: number | null
+  steals: number
+  freeThrowsWon: number
 }
 
 export type MatchStats = {
@@ -70,6 +73,8 @@ function emptyRow(p: StatPlayer): PlayerRow {
     saves: 0,
     goalsConceded: 0,
     savePct: null,
+    steals: 0,
+    freeThrowsWon: 0,
   }
 }
 
@@ -136,6 +141,16 @@ export function computeStats(events: StatEvent[], players: StatPlayer[]): MatchS
         if (keeper) keeper.goalsConceded++
         break
       }
+      case 'STEAL': {
+        const player = rowFor(e.playerId)
+        if (player) player.steals++
+        break
+      }
+      case 'FREE_THROW_WON': {
+        const player = rowFor(e.playerId)
+        if (player) player.freeThrowsWon++
+        break
+      }
     }
   }
 
@@ -163,6 +178,33 @@ export function computePositionStats(events: StatEvent[]): PositionRow[] {
     if (!e.shotPosition) continue
     if (e.type !== 'GOAL' && e.type !== 'SHOT_SAVED' && e.type !== 'SHOT_MISSED') continue
     const row = rows.get(e.shotPosition)
+    if (!row) continue
+    row.shots++
+    if (e.type === 'GOAL') row.goals++
+  }
+
+  Array.from(rows.values()).forEach(row => {
+    row.shootingPct = row.shots > 0 ? Math.round((row.goals / row.shots) * 1000) / 10 : null
+  })
+
+  return Array.from(rows.values())
+}
+
+export type ZoneRow = {
+  zone: GoalZone
+  shots: number
+  goals: number
+  shootingPct: number | null
+}
+
+export function computeZoneStats(events: StatEvent[]): ZoneRow[] {
+  const rows = new Map<GoalZone, ZoneRow>()
+  for (const z of ZONE_ORDER) rows.set(z, { zone: z, shots: 0, goals: 0, shootingPct: null })
+
+  for (const e of events) {
+    if (!e.zone) continue
+    if (e.type !== 'GOAL' && e.type !== 'SHOT_SAVED') continue
+    const row = rows.get(e.zone)
     if (!row) continue
     row.shots++
     if (e.type === 'GOAL') row.goals++

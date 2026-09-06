@@ -3,8 +3,10 @@ import { useEffect, useState } from 'react'
 import SiteHeader from '@/components/SiteHeader'
 import { useSiteSettings } from '@/components/SiteSettingsContext'
 import { getSeasonForDate } from '@/lib/season'
-import type { PlayerRow, PositionRow } from '@/lib/kamper-stats'
+import type { PlayerRow, PositionRow, ZoneRow } from '@/lib/kamper-stats'
 import { SHOT_POSITION_LABELS } from '@/lib/kamper-constants'
+import CourtPositionChart from '@/components/CourtPositionChart'
+import GoalZoneHeatmap from '@/components/GoalZoneHeatmap'
 
 type Team = { id: string; name: string }
 type Stats = {
@@ -18,6 +20,7 @@ type Stats = {
   goalsAgainst: number
   players: PlayerRow[]
   positions: PositionRow[]
+  zones: ZoneRow[]
 }
 
 const inputCls = "bg-[#1a1a1a] border border-gray-600 text-white rounded-lg px-3 py-2 text-sm focus:outline-none"
@@ -93,6 +96,14 @@ export default function StatistikkPage() {
               ))}
             </div>
 
+            <section className="bg-[#2a2a2a] rounded-xl border border-gray-700 p-4">
+              <h3 className="font-semibold text-white mb-3">Skuddkart</h3>
+              <div className="grid sm:grid-cols-2 gap-6">
+                <CourtPositionChart stats={stats.positions} primaryColor={primaryColor} title="Hvor skuddene kommer fra" />
+                <GoalZoneHeatmap stats={stats.zones} primaryColor={primaryColor} title="Hvor i målet det skytes" />
+              </div>
+            </section>
+
             <section className="bg-[#2a2a2a] rounded-xl border border-gray-700 overflow-hidden">
               <h3 className="font-semibold text-white px-4 pt-4">Utespillere</h3>
               <div className="overflow-x-auto">
@@ -107,6 +118,8 @@ export default function StatistikkPage() {
                       <th className="text-right px-3 py-2 font-medium text-gray-400 hidden sm:table-cell">Skudd%</th>
                       <th className="text-right px-3 py-2 font-medium text-gray-400 hidden md:table-cell">Tekn. feil</th>
                       <th className="text-right px-3 py-2 font-medium text-gray-400 hidden md:table-cell">Forsvarsfeil</th>
+                      <th className="text-right px-3 py-2 font-medium text-gray-400 hidden lg:table-cell">Snapp</th>
+                      <th className="text-right px-3 py-2 font-medium text-gray-400 hidden lg:table-cell">Frikast vunnet</th>
                       <th className="text-right px-3 py-2 font-medium text-gray-400">🟨</th>
                       <th className="text-right px-3 py-2 font-medium text-gray-400">2'</th>
                       <th className="text-right px-3 py-2 font-medium text-gray-400">🟥</th>
@@ -123,13 +136,15 @@ export default function StatistikkPage() {
                         <td className="px-3 py-2 text-right text-gray-400 hidden sm:table-cell">{p.shootingPct != null ? `${p.shootingPct}%` : '–'}</td>
                         <td className="px-3 py-2 text-right text-gray-400 hidden md:table-cell">{p.technicalFaults}</td>
                         <td className="px-3 py-2 text-right text-gray-400 hidden md:table-cell">{p.defensiveFouls}</td>
+                        <td className="px-3 py-2 text-right text-gray-400 hidden lg:table-cell">{p.steals}</td>
+                        <td className="px-3 py-2 text-right text-gray-400 hidden lg:table-cell">{p.freeThrowsWon}</td>
                         <td className="px-3 py-2 text-right text-gray-400">{p.yellowCards}</td>
                         <td className="px-3 py-2 text-right text-gray-400">{p.twoMinutes}</td>
                         <td className="px-3 py-2 text-right text-gray-400">{p.redCards}</td>
                       </tr>
                     ))}
                     {outPlayers.length === 0 && (
-                      <tr><td colSpan={11} className="px-3 py-6 text-center text-gray-500">Ingen data</td></tr>
+                      <tr><td colSpan={13} className="px-3 py-6 text-center text-gray-500">Ingen data</td></tr>
                     )}
                   </tbody>
                 </table>

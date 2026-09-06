@@ -8,6 +8,8 @@ export const EVENT_TYPE_LABELS: Record<MatchEventType, string> = {
   DEFENSIVE_FOUL: 'Forsvarsfeil',
   GOAL_CONCEDED: 'Baklengs mål',
   SAVE: 'Redning',
+  STEAL: 'Snappet ball',
+  FREE_THROW_WON: 'Vunnet frikast',
 }
 
 export const FAULT_TYPE_LABELS: Record<TechnicalFaultType, string> = {
@@ -53,6 +55,28 @@ export const SHOT_POSITION_LABELS: Record<ShotPosition, string> = {
 export const SHOT_POSITION_ORDER: ShotPosition[] = [
   'LEFT_WING', 'LEFT_BACK', 'CENTER_BACK', 'RIGHT_BACK', 'RIGHT_WING', 'PIVOT', 'SEVEN_METER', 'FAST_BREAK',
 ]
+
+export const SHOT_POSITION_SHORT: Record<ShotPosition, string> = {
+  LEFT_WING: 'VK',
+  LEFT_BACK: 'VB',
+  CENTER_BACK: 'M',
+  RIGHT_BACK: 'HB',
+  RIGHT_WING: 'HK',
+  PIVOT: 'S',
+  SEVEN_METER: '7m',
+  FAST_BREAK: 'GJ',
+}
+
+export const SHOT_POSITION_COORDS: Record<ShotPosition, { x: number; y: number }> = {
+  LEFT_WING: { x: 8, y: 27 },
+  LEFT_BACK: { x: 23, y: 58 },
+  CENTER_BACK: { x: 50, y: 66 },
+  RIGHT_BACK: { x: 77, y: 58 },
+  RIGHT_WING: { x: 92, y: 27 },
+  PIVOT: { x: 50, y: 24 },
+  SEVEN_METER: { x: 50, y: 40 },
+  FAST_BREAK: { x: 50, y: 92 },
+}
 
 export const FAULT_TYPE_ORDER: TechnicalFaultType[] = ['STEPS', 'CHARGING', 'DOUBLE_DRIBBLE', 'PASSIVE', 'OTHER']
 

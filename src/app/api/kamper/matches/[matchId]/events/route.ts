@@ -9,6 +9,7 @@ import { hasKamperAccess } from '@/lib/access'
 
 const EVENT_TYPES: MatchEventType[] = [
   'GOAL', 'SHOT_SAVED', 'SHOT_MISSED', 'TECHNICAL_FAULT', 'DEFENSIVE_FOUL', 'GOAL_CONCEDED', 'SAVE',
+  'STEAL', 'FREE_THROW_WON',
 ]
 const ZONES: GoalZone[] = ['TL', 'TC', 'TR', 'ML', 'MC', 'MR', 'BL', 'BC', 'BR']
 const SHOT_POSITIONS: ShotPosition[] = [
@@ -134,6 +135,10 @@ export async function POST(req: Request, { params }: { params: { matchId: string
       if (!playerId) return NextResponse.json({ error: 'Målvakt er påkrevd' }, { status: 400 })
       if (!zone || !ZONES.includes(zone)) return NextResponse.json({ error: 'Sone i mål er påkrevd' }, { status: 400 })
       data.zone = zone
+      break
+    case 'STEAL':
+    case 'FREE_THROW_WON':
+      if (!playerId) return NextResponse.json({ error: 'Spiller er påkrevd' }, { status: 400 })
       break
   }
 

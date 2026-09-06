@@ -7,7 +7,9 @@ import { useSiteSettings } from '@/components/SiteSettingsContext'
 import GoalZoneGrid from '@/components/GoalZoneGrid'
 import CourtPositionPicker from '@/components/CourtPositionPicker'
 import PlayerPicker, { type PlayerLite } from '@/components/PlayerPicker'
-import { computeStats, computePositionStats } from '@/lib/kamper-stats'
+import { computeStats, computePositionStats, computeZoneStats } from '@/lib/kamper-stats'
+import CourtPositionChart from '@/components/CourtPositionChart'
+import GoalZoneHeatmap from '@/components/GoalZoneHeatmap'
 import {
   EVENT_TYPE_LABELS, FAULT_TYPE_LABELS, FAULT_TYPE_ORDER,
   MATCH_STATUS_LABELS, PUNISHMENT_LABELS, PUNISHMENT_ORDER, SHOT_POSITION_LABELS, ZONE_LABELS,
@@ -181,6 +183,10 @@ export default function MatchConsolePage() {
         if (next.step === 'keeper') { setFlow({ ...next, step: 'zone' }); return }
         submitEvent(next)
         return
+      case 'STEAL':
+      case 'FREE_THROW_WON':
+        submitEvent(next)
+        return
     }
   }
 
@@ -245,6 +251,11 @@ export default function MatchConsolePage() {
     return computePositionStats(match.events).filter(p => p.shots > 0)
   }, [match])
 
+  const zoneStats = useMemo(() => {
+    if (!match) return null
+    return computeZoneStats(match.events)
+  }, [match])
+
   function elapsedSeconds(): number {
     if (!match) return 0
     if (match.clockRunning && match.clockStartedAt) {
@@ -274,6 +285,8 @@ export default function MatchConsolePage() {
     { type: 'SHOT_MISSED', label: 'Skudd utenfor' },
     { type: 'TECHNICAL_FAULT', label: 'Teknisk feil' },
     { type: 'DEFENSIVE_FOUL', label: 'Forsvarsfeil/kort' },
+    { type: 'STEAL', label: 'Snappet ball' },
+    { type: 'FREE_THROW_WON', label: 'Vunnet frikast' },
     { type: 'SAVE', label: 'Redning' },
     { type: 'GOAL_CONCEDED', label: 'Baklengs mål' },
   ]
@@ -373,10 +386,11 @@ export default function MatchConsolePage() {
                     <th className="text-right px-3 py-2 font-medium text-gray-400">Assist</th>
                     <th className="text-right px-3 py-2 font-medium text-gray-400 hidden sm:table-cell">Red./Bakl.</th>
                     <th className="text-right px-3 py-2 font-medium text-gray-400 hidden sm:table-cell">Feil</th>
+                    <th className="text-right px-3 py-2 font-medium text-gray-400 hidden sm:table-cell">Snapp/Frikast</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-700">
-                  {stats.players.filter(p => p.goals || p.assists || p.shotsTotal || p.saves || p.goalsConceded || p.technicalFaults || p.defensiveFouls).map(p => (
+                  {stats.players.filter(p => p.goals || p.assists || p.shotsTotal || p.saves || p.goalsConceded || p.technicalFaults || p.defensiveFouls || p.steals || p.freeThrowsWon).map(p => (
                     <tr key={p.playerId}>
                       <td className="px-3 py-2 font-bold" style={{ color: primaryColor }}>{p.number ?? '–'}</td>
                       <td className="px-3 py-2 text-white">{p.name}</td>
@@ -384,10 +398,21 @@ export default function MatchConsolePage() {
                       <td className="px-3 py-2 text-right text-white">{p.assists}</td>
                       <td className="px-3 py-2 text-right text-gray-400 hidden sm:table-cell">{p.isGoalkeeper ? `${p.saves}/${p.goalsConceded}` : '–'}</td>
                       <td className="px-3 py-2 text-right text-gray-400 hidden sm:table-cell">{p.technicalFaults + p.defensiveFouls}</td>
+                      <td className="px-3 py-2 text-right text-gray-400 hidden sm:table-cell">{p.steals}/{p.freeThrowsWon}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+            </div>
+          </div>
+        )}
+
+        {(showStats || isFinished) && zoneStats && (
+          <div className="bg-[#2a2a2a] rounded-xl border border-gray-700 p-4">
+            <h3 className="font-semibold text-white mb-3">Skuddkart</h3>
+            <div className="grid sm:grid-cols-2 gap-6">
+              <CourtPositionChart stats={positionStats ?? []} primaryColor={primaryColor} title="Hvor skuddene kommer fra" />
+              <GoalZoneHeatmap stats={zoneStats} primaryColor={primaryColor} title="Hvor i målet det skytes" />
             </div>
           </div>
         )}
