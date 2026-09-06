@@ -57,6 +57,15 @@ type Flow = {
   punishment?: Punishment
 }
 
+type ActionCategory = 'skudd' | 'feil' | 'forsvar' | 'keeper'
+
+const CATEGORY_STYLES: Record<ActionCategory, string> = {
+  skudd: 'border-sky-700 bg-sky-950/40',
+  feil: 'border-red-800 bg-red-950/40',
+  forsvar: 'border-emerald-700 bg-emerald-950/40',
+  keeper: 'border-purple-700 bg-purple-950/40',
+}
+
 function pad(n: number) { return n.toString().padStart(2, '0') }
 
 function describeEvent(e: MatchEventRow): string {
@@ -279,16 +288,16 @@ export default function MatchConsolePage() {
   const secs = elapsedSeconds()
   const clockText = `${pad(Math.floor(secs / 60))}:${pad(secs % 60)}`
 
-  const actionButtons: { type: MatchEventType; label: string }[] = [
-    { type: 'GOAL', label: 'Mål' },
-    { type: 'SHOT_SAVED', label: 'Skudd reddet' },
-    { type: 'SHOT_MISSED', label: 'Skudd utenfor' },
-    { type: 'TECHNICAL_FAULT', label: 'Teknisk feil' },
-    { type: 'DEFENSIVE_FOUL', label: 'Forsvarsfeil/kort' },
-    { type: 'STEAL', label: 'Snappet ball' },
-    { type: 'FREE_THROW_WON', label: 'Vunnet frikast' },
-    { type: 'SAVE', label: 'Redning' },
-    { type: 'GOAL_CONCEDED', label: 'Baklengs mål' },
+  const actionButtons: { type: MatchEventType; label: string; category: ActionCategory }[] = [
+    { type: 'GOAL', label: 'Mål', category: 'skudd' },
+    { type: 'SHOT_SAVED', label: 'Skudd reddet', category: 'skudd' },
+    { type: 'SHOT_MISSED', label: 'Skudd utenfor', category: 'skudd' },
+    { type: 'TECHNICAL_FAULT', label: 'Teknisk feil', category: 'feil' },
+    { type: 'DEFENSIVE_FOUL', label: 'Forsvarsfeil/kort', category: 'feil' },
+    { type: 'STEAL', label: 'Snappet ball', category: 'forsvar' },
+    { type: 'FREE_THROW_WON', label: 'Vunnet frikast', category: 'forsvar' },
+    { type: 'SAVE', label: 'Redning', category: 'keeper' },
+    { type: 'GOAL_CONCEDED', label: 'Baklengs mål', category: 'keeper' },
   ]
 
   return (
@@ -363,7 +372,7 @@ export default function MatchConsolePage() {
               <button
                 key={b.type}
                 onClick={() => setFlow({ type: b.type, step: b.type === 'SAVE' || b.type === 'GOAL_CONCEDED' ? 'keeper' : b.type === 'TECHNICAL_FAULT' ? 'faultType' : 'player' })}
-                className="rounded-xl border border-gray-600 bg-[#2a2a2a] text-white font-medium text-base py-4 active:border-white"
+                className={`rounded-xl border-2 text-white font-medium text-base py-4 active:border-white ${CATEGORY_STYLES[b.category]}`}
                 style={{ minHeight: 64 }}
               >
                 {b.label}
