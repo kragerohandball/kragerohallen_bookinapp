@@ -550,13 +550,22 @@ export default function MatchConsolePage() {
             <h2 className="text-lg font-semibold mb-2">Målvakter</h2>
             <PrintGoalkeeperTable players={stats.players} totals={goalkeeperTotals!} />
           </section>
+          {zoneStats && (
+            <section>
+              <h2 className="text-lg font-semibold mb-2">Skuddkart</h2>
+              <div className="grid grid-cols-2 gap-6">
+                <CourtPositionChart stats={positionStats ?? []} primaryColor={primaryColor} title="Hvor skuddene kommer fra" theme="light" />
+                <GoalZoneHeatmap stats={zoneStats} primaryColor={primaryColor} title="Hvor i målet det skytes" theme="light" />
+              </div>
+            </section>
+          )}
           {positionStats && positionStats.length > 0 && (
             <section>
               <h2 className="text-lg font-semibold mb-2">Skudd etter posisjon</h2>
               <PrintPositionTable positions={positionStats} />
             </section>
           )}
-          <section>
+          <section className="break-before-page">
             <h2 className="text-lg font-semibold mb-2">Hendelser</h2>
             <table className="w-full border-collapse text-sm">
               <thead>

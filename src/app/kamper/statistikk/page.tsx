@@ -267,6 +267,13 @@ export default function StatistikkPage() {
             <PrintGoalkeeperTable players={stats.players} totals={goalkeeperTotals!} />
           </section>
           <section>
+            <h2 className="text-lg font-semibold mb-2">Skuddkart</h2>
+            <div className="grid grid-cols-2 gap-6">
+              <CourtPositionChart stats={stats.positions} primaryColor={primaryColor} title="Hvor skuddene kommer fra" theme="light" />
+              <GoalZoneHeatmap stats={stats.zones} primaryColor={primaryColor} title="Hvor i målet det skytes" theme="light" />
+            </div>
+          </section>
+          <section>
             <h2 className="text-lg font-semibold mb-2">Skudd etter posisjon</h2>
             <PrintPositionTable positions={stats.positions} />
           </section>
