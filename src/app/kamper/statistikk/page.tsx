@@ -8,6 +8,7 @@ import { computeOutfieldTotals, computeGoalkeeperTotals } from '@/lib/kamper-sta
 import { SHOT_POSITION_LABELS } from '@/lib/kamper-constants'
 import CourtPositionChart from '@/components/CourtPositionChart'
 import GoalZoneHeatmap from '@/components/GoalZoneHeatmap'
+import { PrintOutfieldTable, PrintGoalkeeperTable, PrintPositionTable } from '@/components/print/PrintTables'
 
 type Team = { id: string; name: string }
 type Stats = {
@@ -71,7 +72,7 @@ export default function StatistikkPage() {
   return (
     <div className="min-h-screen bg-[#1a1a1a]">
       <SiteHeader backHref="/kamper" backLabel="← Kamper" title="Sesongstatistikk" />
-      <main className="max-w-5xl mx-auto px-4 py-8 space-y-6">
+      <main className="max-w-5xl mx-auto px-4 py-8 space-y-6 print:hidden">
         <div className="flex flex-wrap gap-3">
           <select value={teamId} onChange={e => setTeamId(e.target.value)} className={inputCls}>
             {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
@@ -79,6 +80,11 @@ export default function StatistikkPage() {
           <select value={season} onChange={e => setSeason(e.target.value)} className={inputCls}>
             {seasons.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
+          {stats && (
+            <button onClick={() => window.print()} className="bg-[#2a2a2a] border border-gray-600 hover:border-gray-400 text-white text-sm font-medium px-4 py-2 rounded-lg">
+              Skriv ut rapport
+            </button>
+          )}
         </div>
 
         {loading && <div className="text-gray-500 text-sm">Laster...</div>}
@@ -242,6 +248,30 @@ export default function StatistikkPage() {
           </>
         )}
       </main>
+
+      {/* Utskriftsvennlig rapport (kun synlig ved utskrift) */}
+      {stats && (
+        <div className="hidden print:block bg-white text-black p-6 space-y-6">
+          <div>
+            <h1 className="text-2xl font-bold">{stats.team.name} — Sesongstatistikk {season}</h1>
+            <p className="text-sm text-gray-700">
+              {stats.matchesPlayed} kamper · {stats.wins} S / {stats.draws} U / {stats.losses} T · Mål {stats.goalsFor}–{stats.goalsAgainst}
+            </p>
+          </div>
+          <section>
+            <h2 className="text-lg font-semibold mb-2">Utespillere</h2>
+            <PrintOutfieldTable players={stats.players} totals={outfieldTotals!} />
+          </section>
+          <section>
+            <h2 className="text-lg font-semibold mb-2">Målvakter</h2>
+            <PrintGoalkeeperTable players={stats.players} totals={goalkeeperTotals!} />
+          </section>
+          <section>
+            <h2 className="text-lg font-semibold mb-2">Skudd etter posisjon</h2>
+            <PrintPositionTable positions={stats.positions} />
+          </section>
+        </div>
+      )}
     </div>
   )
 }

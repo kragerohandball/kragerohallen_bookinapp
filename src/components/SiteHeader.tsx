@@ -15,7 +15,7 @@ export default function SiteHeader({ backHref, backLabel, title }: Props) {
   const { data: session } = useSession()
 
   return (
-    <nav style={{ backgroundColor: navBgColor, borderBottom: `1px solid ${primaryColor}30` }} className="px-4 py-3">
+    <nav style={{ backgroundColor: navBgColor, borderBottom: `1px solid ${primaryColor}30` }} className="px-4 py-3 print:hidden">
       <div className="max-w-5xl mx-auto flex items-center justify-between">
         <div className="flex items-center gap-3">
           {logoUrl && (

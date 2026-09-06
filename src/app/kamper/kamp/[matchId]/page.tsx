@@ -10,6 +10,7 @@ import PlayerPicker, { type PlayerLite } from '@/components/PlayerPicker'
 import { computeStats, computePositionStats, computeZoneStats, computeOutfieldTotals, computeGoalkeeperTotals } from '@/lib/kamper-stats'
 import CourtPositionChart from '@/components/CourtPositionChart'
 import GoalZoneHeatmap from '@/components/GoalZoneHeatmap'
+import { PrintOutfieldTable, PrintGoalkeeperTable, PrintPositionTable } from '@/components/print/PrintTables'
 import {
   EVENT_TYPE_LABELS, FAULT_TYPE_LABELS, FAULT_TYPE_ORDER,
   MATCH_STATUS_LABELS, PUNISHMENT_LABELS, PUNISHMENT_ORDER, SHOT_POSITION_LABELS, ZONE_LABELS,
@@ -306,7 +307,7 @@ export default function MatchConsolePage() {
   return (
     <div className="min-h-screen bg-[#1a1a1a]">
       <SiteHeader backHref={`/kamper/${match.team.id}`} backLabel="← Lag" title={`vs ${match.opponentName}`} />
-      <main className="max-w-2xl mx-auto px-4 py-6 space-y-5">
+      <main className="max-w-2xl mx-auto px-4 py-6 space-y-5 print:hidden">
         {msg && (
           <div className={`text-sm px-4 py-3 rounded-lg border ${
             msg.type === 'success' ? 'bg-green-900/40 text-green-300 border-green-700' : 'bg-red-900/40 text-red-300 border-red-700'
@@ -364,6 +365,9 @@ export default function MatchConsolePage() {
             )}
             <button onClick={() => setShowStats(s => !s)} className="bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium px-4 py-2 rounded-lg">
               {showStats || isFinished ? 'Skjul statistikk' : 'Vis statistikk'}
+            </button>
+            <button onClick={() => window.print()} className="bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium px-4 py-2 rounded-lg">
+              Skriv ut rapport
             </button>
           </div>
         </div>
@@ -529,9 +533,55 @@ export default function MatchConsolePage() {
         </div>
       </main>
 
+      {/* Utskriftsvennlig rapport (kun synlig ved utskrift) */}
+      {stats && (
+        <div className="hidden print:block bg-white text-black p-6 space-y-6">
+          <div>
+            <h1 className="text-2xl font-bold">{match.team.name} {stats.ourScore} – {stats.opponentScore} {match.opponentName}</h1>
+            <p className="text-sm text-gray-700">
+              {new Date(match.date).toLocaleDateString('nb-NO', { day: 'numeric', month: 'long', year: 'numeric' })} · {match.season} · {MATCH_STATUS_LABELS[match.status]}
+            </p>
+          </div>
+          <section>
+            <h2 className="text-lg font-semibold mb-2">Utespillere</h2>
+            <PrintOutfieldTable players={stats.players} totals={outfieldTotals!} />
+          </section>
+          <section>
+            <h2 className="text-lg font-semibold mb-2">Målvakter</h2>
+            <PrintGoalkeeperTable players={stats.players} totals={goalkeeperTotals!} />
+          </section>
+          {positionStats && positionStats.length > 0 && (
+            <section>
+              <h2 className="text-lg font-semibold mb-2">Skudd etter posisjon</h2>
+              <PrintPositionTable positions={positionStats} />
+            </section>
+          )}
+          <section>
+            <h2 className="text-lg font-semibold mb-2">Hendelser</h2>
+            <table className="w-full border-collapse text-sm">
+              <thead>
+                <tr>
+                  <th className="text-left border border-gray-400 px-2 py-1 bg-gray-100">Tid</th>
+                  <th className="text-left border border-gray-400 px-2 py-1 bg-gray-100">Hendelse</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[...match.events].reverse().map(e => (
+                  <tr key={e.id}>
+                    <td className="border border-gray-400 px-2 py-1 whitespace-nowrap">{e.minute != null ? `${e.minute}′ (${e.period}.)` : `(${e.period}.)`}</td>
+                    <td className="border border-gray-400 px-2 py-1">{describeEvent(e)}</td>
+                  </tr>
+                ))}
+                {match.events.length === 0 && <tr><td className="border border-gray-400 px-2 py-1" colSpan={2}>Ingen hendelser</td></tr>}
+              </tbody>
+            </table>
+          </section>
+        </div>
+      )}
+
       {/* Event-flow overlay */}
       {flow && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 px-4">
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 px-4 print:hidden">
           <div className="bg-[#2a2a2a] rounded-2xl border border-gray-700 p-6 max-w-md w-full space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-white">{EVENT_TYPE_LABELS[flow.type]}</h3>
@@ -603,7 +653,7 @@ export default function MatchConsolePage() {
 
       {/* Kamptropp-overlay */}
       {showSquadPicker && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 px-4">
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 px-4 print:hidden">
           <div className="bg-[#2a2a2a] rounded-2xl border border-gray-700 p-6 max-w-md w-full space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-white">Velg kamptropp ({squadSelection.size} valgt)</h3>
