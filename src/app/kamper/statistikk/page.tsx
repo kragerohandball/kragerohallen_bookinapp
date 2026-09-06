@@ -4,6 +4,7 @@ import SiteHeader from '@/components/SiteHeader'
 import { useSiteSettings } from '@/components/SiteSettingsContext'
 import { getSeasonForDate } from '@/lib/season'
 import type { PlayerRow, PositionRow, ZoneRow } from '@/lib/kamper-stats'
+import { computeOutfieldTotals, computeGoalkeeperTotals } from '@/lib/kamper-stats'
 import { SHOT_POSITION_LABELS } from '@/lib/kamper-constants'
 import CourtPositionChart from '@/components/CourtPositionChart'
 import GoalZoneHeatmap from '@/components/GoalZoneHeatmap'
@@ -64,6 +65,8 @@ export default function StatistikkPage() {
 
   const outPlayers = stats?.players.filter(p => !p.isGoalkeeper) ?? []
   const keepers = stats?.players.filter(p => p.isGoalkeeper) ?? []
+  const outfieldTotals = stats ? computeOutfieldTotals(stats.players) : null
+  const goalkeeperTotals = stats ? computeGoalkeeperTotals(stats.players) : null
 
   return (
     <div className="min-h-screen bg-[#1a1a1a]">
@@ -146,6 +149,23 @@ export default function StatistikkPage() {
                     {outPlayers.length === 0 && (
                       <tr><td colSpan={13} className="px-3 py-6 text-center text-gray-500">Ingen data</td></tr>
                     )}
+                    {outfieldTotals && outPlayers.length > 0 && (
+                      <tr className="border-t-2 border-gray-600 font-semibold">
+                        <td className="px-3 py-2"></td>
+                        <td className="px-3 py-2 text-white">Totalt</td>
+                        <td className="px-3 py-2 text-right text-white">{outfieldTotals.goals}</td>
+                        <td className="px-3 py-2 text-right text-white">{outfieldTotals.assists}</td>
+                        <td className="px-3 py-2 text-right text-gray-300">{outfieldTotals.shootingPct != null ? `${outfieldTotals.shootingPct}%` : '–'}</td>
+                        <td className="px-3 py-2 text-right text-gray-300 hidden sm:table-cell">{outfieldTotals.shotsTotal}</td>
+                        <td className="px-3 py-2 text-right text-gray-300 hidden md:table-cell">{outfieldTotals.technicalFaults}</td>
+                        <td className="px-3 py-2 text-right text-gray-300 hidden md:table-cell">{outfieldTotals.defensiveFouls}</td>
+                        <td className="px-3 py-2 text-right text-gray-300 hidden lg:table-cell">{outfieldTotals.steals}</td>
+                        <td className="px-3 py-2 text-right text-gray-300 hidden lg:table-cell">{outfieldTotals.freeThrowsWon}</td>
+                        <td className="px-3 py-2 text-right text-gray-300">{outfieldTotals.yellowCards}</td>
+                        <td className="px-3 py-2 text-right text-gray-300">{outfieldTotals.twoMinutes}</td>
+                        <td className="px-3 py-2 text-right text-gray-300">{outfieldTotals.redCards}</td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -176,6 +196,15 @@ export default function StatistikkPage() {
                     ))}
                     {keepers.length === 0 && (
                       <tr><td colSpan={5} className="px-3 py-6 text-center text-gray-500">Ingen data</td></tr>
+                    )}
+                    {goalkeeperTotals && keepers.length > 0 && (
+                      <tr className="border-t-2 border-gray-600 font-semibold">
+                        <td className="px-3 py-2"></td>
+                        <td className="px-3 py-2 text-white">Totalt</td>
+                        <td className="px-3 py-2 text-right text-white">{goalkeeperTotals.saves}</td>
+                        <td className="px-3 py-2 text-right text-white">{goalkeeperTotals.goalsConceded}</td>
+                        <td className="px-3 py-2 text-right text-gray-300">{goalkeeperTotals.savePct != null ? `${goalkeeperTotals.savePct}%` : '–'}</td>
+                      </tr>
                     )}
                   </tbody>
                 </table>

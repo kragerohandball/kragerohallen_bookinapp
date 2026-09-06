@@ -7,7 +7,7 @@ import { useSiteSettings } from '@/components/SiteSettingsContext'
 import GoalZoneGrid from '@/components/GoalZoneGrid'
 import CourtPositionPicker from '@/components/CourtPositionPicker'
 import PlayerPicker, { type PlayerLite } from '@/components/PlayerPicker'
-import { computeStats, computePositionStats, computeZoneStats } from '@/lib/kamper-stats'
+import { computeStats, computePositionStats, computeZoneStats, computeOutfieldTotals, computeGoalkeeperTotals } from '@/lib/kamper-stats'
 import CourtPositionChart from '@/components/CourtPositionChart'
 import GoalZoneHeatmap from '@/components/GoalZoneHeatmap'
 import {
@@ -265,6 +265,9 @@ export default function MatchConsolePage() {
     return computeZoneStats(match.events)
   }, [match])
 
+  const outfieldTotals = useMemo(() => (stats ? computeOutfieldTotals(stats.players) : null), [stats])
+  const goalkeeperTotals = useMemo(() => (stats ? computeGoalkeeperTotals(stats.players) : null), [stats])
+
   function elapsedSeconds(): number {
     if (!match) return 0
     if (match.clockRunning && match.clockStartedAt) {
@@ -384,7 +387,7 @@ export default function MatchConsolePage() {
         {/* Statistikk-panel */}
         {(showStats || isFinished) && stats && (
           <div className="bg-[#2a2a2a] rounded-xl border border-gray-700 overflow-hidden">
-            <h3 className="font-semibold text-white px-4 pt-4">Kampstatistikk</h3>
+            <h3 className="font-semibold text-white px-4 pt-4">Utespillere</h3>
             <div className="overflow-x-auto">
               <table className="w-full text-sm mt-2">
                 <thead className="bg-[#111] border-b border-gray-700">
@@ -393,27 +396,73 @@ export default function MatchConsolePage() {
                     <th className="text-left px-3 py-2 font-medium text-gray-400">Navn</th>
                     <th className="text-right px-3 py-2 font-medium text-gray-400">Mål</th>
                     <th className="text-right px-3 py-2 font-medium text-gray-400">Assist</th>
-                    <th className="text-right px-3 py-2 font-medium text-gray-400">Uttelling%</th>
-                    <th className="text-right px-3 py-2 font-medium text-gray-400 hidden sm:table-cell">Red./Bakl.</th>
+                    <th className="text-right px-3 py-2 font-medium text-gray-400">Skudd%</th>
                     <th className="text-right px-3 py-2 font-medium text-gray-400 hidden sm:table-cell">Feil</th>
                     <th className="text-right px-3 py-2 font-medium text-gray-400 hidden sm:table-cell">Snapp/Frikast</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-700">
-                  {stats.players.filter(p => p.goals || p.assists || p.shotsTotal || p.saves || p.goalsConceded || p.technicalFaults || p.defensiveFouls || p.steals || p.freeThrowsWon).map(p => (
+                  {stats.players.filter(p => !p.isGoalkeeper).filter(p => p.goals || p.assists || p.shotsTotal || p.technicalFaults || p.defensiveFouls || p.steals || p.freeThrowsWon).map(p => (
                     <tr key={p.playerId}>
                       <td className="px-3 py-2 font-bold" style={{ color: primaryColor }}>{p.number ?? '–'}</td>
                       <td className="px-3 py-2 text-white">{p.name}</td>
                       <td className="px-3 py-2 text-right text-white">{p.goals}</td>
                       <td className="px-3 py-2 text-right text-white">{p.assists}</td>
-                      <td className="px-3 py-2 text-right text-gray-400">
-                        {p.isGoalkeeper ? (p.savePct != null ? `${p.savePct}%` : '–') : (p.shootingPct != null ? `${p.shootingPct}%` : '–')}
-                      </td>
-                      <td className="px-3 py-2 text-right text-gray-400 hidden sm:table-cell">{p.isGoalkeeper ? `${p.saves}/${p.goalsConceded}` : '–'}</td>
+                      <td className="px-3 py-2 text-right text-gray-400">{p.shootingPct != null ? `${p.shootingPct}%` : '–'}</td>
                       <td className="px-3 py-2 text-right text-gray-400 hidden sm:table-cell">{p.technicalFaults + p.defensiveFouls}</td>
                       <td className="px-3 py-2 text-right text-gray-400 hidden sm:table-cell">{p.steals}/{p.freeThrowsWon}</td>
                     </tr>
                   ))}
+                  {outfieldTotals && (
+                    <tr className="border-t-2 border-gray-600 font-semibold">
+                      <td className="px-3 py-2"></td>
+                      <td className="px-3 py-2 text-white">Totalt</td>
+                      <td className="px-3 py-2 text-right text-white">{outfieldTotals.goals}</td>
+                      <td className="px-3 py-2 text-right text-white">{outfieldTotals.assists}</td>
+                      <td className="px-3 py-2 text-right text-gray-300">{outfieldTotals.shootingPct != null ? `${outfieldTotals.shootingPct}%` : '–'}</td>
+                      <td className="px-3 py-2 text-right text-gray-300 hidden sm:table-cell">{outfieldTotals.technicalFaults + outfieldTotals.defensiveFouls}</td>
+                      <td className="px-3 py-2 text-right text-gray-300 hidden sm:table-cell">{outfieldTotals.steals}/{outfieldTotals.freeThrowsWon}</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {(showStats || isFinished) && stats && stats.players.some(p => p.isGoalkeeper && (p.saves || p.goalsConceded)) && (
+          <div className="bg-[#2a2a2a] rounded-xl border border-gray-700 overflow-hidden">
+            <h3 className="font-semibold text-white px-4 pt-4">Målvakter</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm mt-2">
+                <thead className="bg-[#111] border-b border-gray-700">
+                  <tr>
+                    <th className="text-left px-3 py-2 font-medium text-gray-400">#</th>
+                    <th className="text-left px-3 py-2 font-medium text-gray-400">Navn</th>
+                    <th className="text-right px-3 py-2 font-medium text-gray-400">Redninger</th>
+                    <th className="text-right px-3 py-2 font-medium text-gray-400">Baklengs mål</th>
+                    <th className="text-right px-3 py-2 font-medium text-gray-400">Redning%</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-700">
+                  {stats.players.filter(p => p.isGoalkeeper && (p.saves || p.goalsConceded)).map(p => (
+                    <tr key={p.playerId}>
+                      <td className="px-3 py-2 font-bold" style={{ color: primaryColor }}>{p.number ?? '–'}</td>
+                      <td className="px-3 py-2 text-white">{p.name}</td>
+                      <td className="px-3 py-2 text-right text-white">{p.saves}</td>
+                      <td className="px-3 py-2 text-right text-white">{p.goalsConceded}</td>
+                      <td className="px-3 py-2 text-right text-gray-400">{p.savePct != null ? `${p.savePct}%` : '–'}</td>
+                    </tr>
+                  ))}
+                  {goalkeeperTotals && (
+                    <tr className="border-t-2 border-gray-600 font-semibold">
+                      <td className="px-3 py-2"></td>
+                      <td className="px-3 py-2 text-white">Totalt</td>
+                      <td className="px-3 py-2 text-right text-white">{goalkeeperTotals.saves}</td>
+                      <td className="px-3 py-2 text-right text-white">{goalkeeperTotals.goalsConceded}</td>
+                      <td className="px-3 py-2 text-right text-gray-300">{goalkeeperTotals.savePct != null ? `${goalkeeperTotals.savePct}%` : '–'}</td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>

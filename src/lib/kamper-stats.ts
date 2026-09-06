@@ -216,3 +216,51 @@ export function computeZoneStats(events: StatEvent[]): ZoneRow[] {
 
   return Array.from(rows.values())
 }
+
+export type OutfieldTotals = {
+  goals: number
+  assists: number
+  shotsTotal: number
+  shootingPct: number | null
+  technicalFaults: number
+  defensiveFouls: number
+  steals: number
+  freeThrowsWon: number
+  yellowCards: number
+  twoMinutes: number
+  redCards: number
+}
+
+export function computeOutfieldTotals(players: PlayerRow[]): OutfieldTotals {
+  const outfield = players.filter(p => !p.isGoalkeeper)
+  const sum = (f: (p: PlayerRow) => number) => outfield.reduce((s, p) => s + f(p), 0)
+  const goals = sum(p => p.goals)
+  const shotsTotal = sum(p => p.shotsTotal)
+  return {
+    goals,
+    assists: sum(p => p.assists),
+    shotsTotal,
+    shootingPct: shotsTotal > 0 ? Math.round((goals / shotsTotal) * 1000) / 10 : null,
+    technicalFaults: sum(p => p.technicalFaults),
+    defensiveFouls: sum(p => p.defensiveFouls),
+    steals: sum(p => p.steals),
+    freeThrowsWon: sum(p => p.freeThrowsWon),
+    yellowCards: sum(p => p.yellowCards),
+    twoMinutes: sum(p => p.twoMinutes),
+    redCards: sum(p => p.redCards),
+  }
+}
+
+export type GoalkeeperTotals = {
+  saves: number
+  goalsConceded: number
+  savePct: number | null
+}
+
+export function computeGoalkeeperTotals(players: PlayerRow[]): GoalkeeperTotals {
+  const keepers = players.filter(p => p.isGoalkeeper)
+  const saves = keepers.reduce((s, p) => s + p.saves, 0)
+  const goalsConceded = keepers.reduce((s, p) => s + p.goalsConceded, 0)
+  const facedShots = saves + goalsConceded
+  return { saves, goalsConceded, savePct: facedShots > 0 ? Math.round((saves / facedShots) * 1000) / 10 : null }
+}
