@@ -1,19 +1,17 @@
+import { fromZonedTime } from 'date-fns-tz'
+
 const TZ = 'Europe/Oslo'
 
 export function osloDate(date: string, hour: number): Date {
-  // Konverter dato + time i norsk tidssone til UTC Date-objekt
-  const { fromZonedTime } = require('date-fns-tz')
-  return fromZonedTime(new Date(`${date}T${String(hour).padStart(2, '0')}:00:00`), TZ)
+  return fromZonedTime(`${date}T${String(hour).padStart(2, '0')}:00:00`, TZ)
 }
 
 export function osloStartOfDay(date: string): Date {
-  const { fromZonedTime } = require('date-fns-tz')
-  return fromZonedTime(new Date(`${date}T00:00:00`), TZ)
+  return fromZonedTime(`${date}T00:00:00`, TZ)
 }
 
 export function osloEndOfDay(date: string): Date {
-  const { fromZonedTime } = require('date-fns-tz')
-  return fromZonedTime(new Date(`${date}T23:59:59`), TZ)
+  return fromZonedTime(`${date}T23:59:59`, TZ)
 }
 
 export function generatePassword(length = 10): string {
