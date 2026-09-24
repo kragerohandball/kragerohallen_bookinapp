@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth-options'
 import { prisma } from '@/lib/prisma'
 import { sendBookingConfirmationEmail } from '@/lib/email'
+import { osloDate } from '@/lib/utils'
 
 export async function GET() {
   const session = await getServerSession(authOptions)
@@ -39,8 +40,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Ugyldig tidspunkt' }, { status: 400 })
   }
 
-  const startTime = new Date(`${date}T${String(startHour).padStart(2, '0')}:00:00`)
-  const endTime = new Date(`${date}T${String(endHour).padStart(2, '0')}:00:00`)
+  const startTime = osloDate(date, startHour)
+  const endTime = osloDate(date, endHour)
 
   const conflict = await prisma.booking.findFirst({
     where: {

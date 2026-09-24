@@ -5,6 +5,7 @@ import { authOptions } from '@/lib/auth-options'
 import { prisma } from '@/lib/prisma'
 import { sendBookingConfirmationEmail } from '@/lib/email'
 import { hasBookingAccess } from '@/lib/access'
+import { osloDate, osloStartOfDay, osloEndOfDay } from '@/lib/utils'
 
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions)
@@ -19,8 +20,8 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'roomId og date er påkrevd' }, { status: 400 })
   }
 
-  const start = new Date(`${date}T00:00:00`)
-  const end = new Date(`${date}T23:59:59`)
+  const start = osloStartOfDay(date)
+  const end = osloEndOfDay(date)
 
   const bookings = await prisma.booking.findMany({
     where: {
@@ -52,8 +53,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Ugyldig tidspunkt' }, { status: 400 })
   }
 
-  const startTime = new Date(`${date}T${String(startHour).padStart(2, '0')}:00:00`)
-  const endTime = new Date(`${date}T${String(endHour).padStart(2, '0')}:00:00`)
+  const startTime = osloDate(date, startHour)
+  const endTime = osloDate(date, endHour)
 
   const maxDate = new Date()
   maxDate.setFullYear(maxDate.getFullYear() + 1)
