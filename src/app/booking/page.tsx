@@ -1,25 +1,36 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
-import { TIME_SLOTS, formatTime } from '@/lib/utils'
+import { formatTime } from '@/lib/utils'
+import { ROOMS, RoomConfig, roomHours, isDayAllowed, allowedDaysText } from '@/lib/rooms'
 import SiteHeader from '@/components/SiteHeader'
 import { useSiteSettings } from '@/components/SiteSettingsContext'
 
-type Room = { id: string; name: string; capacity: number; description: string }
+type Room = RoomConfig
 type Booking = {
   id: string
   startTime: string
   endTime: string
   notes?: string
   isBlocked: boolean
+  externalId?: string | null
   user?: { name: string; group: string }
   room?: { name: string }
 }
 
-const ROOMS: Room[] = [
-  { id: 'room-kafeen', name: 'Kaféen', capacity: 50, description: 'Plass til 50 personer • Stor TV' },
-  { id: 'room-trykkerommet', name: 'Trykkerommet', capacity: 8, description: 'Plass til 8 personer' },
-]
+function slotRange(date: string, hour: number): [number, number] {
+  const start = new Date(`${date}T${String(hour).padStart(2, '0')}:00:00`).getTime()
+  return [start, start + 60 * 60 * 1000]
+}
+
+function bookingAt(bookings: Booking[], date: string, hour: number): Booking | undefined {
+  const [s, e] = slotRange(date, hour)
+  return bookings.find(b => new Date(b.startTime).getTime() < e && new Date(b.endTime).getTime() > s)
+}
+
+function isMatch(b: Booking) {
+  return !!b.externalId?.startsWith('hbno:')
+}
 
 function todayStr() {
   return new Date().toISOString().split('T')[0]
@@ -64,15 +75,10 @@ export default function BookingPage() {
   }, [submitting])
 
   function getSlotStatus(hour: number): 'available' | 'booked' | 'blocked' | 'past' | 'selected' {
-    const now = new Date()
-    const slotDate = new Date(`${selectedDate}T${String(hour).padStart(2, '0')}:00:00`)
-    if (slotDate < now) return 'past'
+    const [slotStart] = slotRange(selectedDate, hour)
+    if (slotStart < Date.now()) return 'past'
 
-    const booking = bookings.find(b => {
-      const s = new Date(b.startTime).getHours()
-      const e = new Date(b.endTime).getHours()
-      return hour >= s && hour < e
-    })
+    const booking = bookingAt(bookings, selectedDate, hour)
     if (booking?.isBlocked) return 'blocked'
     if (booking) return 'booked'
 
@@ -87,11 +93,7 @@ export default function BookingPage() {
   function handleSlotClick(hour: number) {
     const status = getSlotStatus(hour)
     if (status === 'booked' || status === 'blocked') {
-      const booking = bookings.find(b => {
-        const s = new Date(b.startTime).getHours()
-        const e = new Date(b.endTime).getHours()
-        return hour >= s && hour < e
-      })
+      const booking = bookingAt(bookings, selectedDate, hour)
       if (booking) setSlotInfo(booking)
       return
     }
@@ -115,9 +117,7 @@ export default function BookingPage() {
         if (conflict) {
           setSelectedStart(hour)
         } else {
-          setSelectedEnd(hour + 1 > 22 ? 22 : hour + 1)
-          // show end picker by setting end to next hour
-          setSelectedEnd(hour + 1)
+          setSelectedEnd(Math.min(hour + 1, selectedRoom!.closeHour))
         }
       }
     } else {
@@ -127,7 +127,7 @@ export default function BookingPage() {
   }
 
   function handleEndChange(e: React.ChangeEvent<HTMLSelectElement>) {
-    setSelectedEnd(Number(e.target.value))
+    setSelectedEnd(e.target.value === '' ? null : Number(e.target.value))
   }
 
   async function handleBook() {
@@ -224,17 +224,17 @@ export default function BookingPage() {
                 Ledige tider — {new Date(selectedDate + 'T12:00:00').toLocaleDateString('nb-NO', { weekday: 'long', day: 'numeric', month: 'long' })}
               </h2>
 
-              {loadingSlots ? (
+              {!isDayAllowed(selectedRoom, selectedDate) ? (
+                <div className="text-gray-500 text-sm py-4">
+                  {selectedRoom.name} kan bare bookes på {allowedDaysText(selectedRoom)}. Velg en annen dato.
+                </div>
+              ) : loadingSlots ? (
                 <div className="text-gray-400 text-sm py-4">Laster...</div>
               ) : (
-                <div className="grid grid-cols-7 sm:grid-cols-14 gap-1.5">
-                  {TIME_SLOTS.map(hour => {
+                <div className={`grid gap-1.5 ${selectedRoom.closeHour - selectedRoom.openHour > 14 ? 'grid-cols-6 sm:grid-cols-12' : 'grid-cols-7 sm:grid-cols-14'}`}>
+                  {roomHours(selectedRoom).map(hour => {
                     const status = getSlotStatus(hour)
-                    const booking = bookings.find(b => {
-                      const s = new Date(b.startTime).getHours()
-                      const e = new Date(b.endTime).getHours()
-                      return hour >= s && hour < e
-                    })
+                    const booking = bookingAt(bookings, selectedDate, hour)
                     const isSelected = status === 'selected'
                     return (
                       <div
@@ -244,7 +244,9 @@ export default function BookingPage() {
                         style={isSelected ? { backgroundColor: primaryColor, borderColor: primaryColor } : undefined}
                         title={
                           booking
-                            ? booking.isBlocked
+                            ? isMatch(booking)
+                              ? booking.notes ?? 'Kamp'
+                              : booking.isBlocked
                               ? 'Blokkert'
                               : `${booking.user?.name} – ${booking.user?.group}`
                             : status === 'past'
@@ -264,7 +266,7 @@ export default function BookingPage() {
                 <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-green-200 border border-green-300 inline-block"></span>Ledig</span>
                 <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded inline-block" style={{ backgroundColor: primaryColor }}></span>Valgt</span>
                 <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-red-100 border border-red-300 inline-block"></span>Opptatt</span>
-                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-gray-200 inline-block"></span>Blokkert</span>
+                <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-gray-200 inline-block"></span>{selectedRoom.banedagbokPlace ? 'Blokkert / kamp' : 'Blokkert'}</span>
               </div>
             </section>
 
@@ -272,7 +274,9 @@ export default function BookingPage() {
             {slotInfo && (
               <div className="bg-[#2a2a2a] rounded-xl border border-gray-600 p-4 flex items-start justify-between gap-4">
                 <div className="space-y-1 text-sm">
-                  {slotInfo.isBlocked ? (
+                  {isMatch(slotInfo) ? (
+                    <p className="font-semibold text-gray-300">Kamp (fra banedagboken)</p>
+                  ) : slotInfo.isBlocked ? (
                     <p className="font-semibold text-gray-300">Blokkert tid</p>
                   ) : (
                     <>
@@ -310,7 +314,7 @@ export default function BookingPage() {
                       className="bg-[#1a1a1a] border border-gray-600 text-white rounded-lg px-3 py-2 text-sm focus:outline-none"
                     >
                       <option value="">Velg sluttid</option>
-                      {Array.from({ length: 22 - selectedStart }, (_, i) => selectedStart + i + 1).map(h => {
+                      {Array.from({ length: selectedRoom.closeHour - selectedStart }, (_, i) => selectedStart + i + 1).map(h => {
                         const conflict = Array.from({ length: h - selectedStart }, (_, i) => selectedStart + i).some(hour => {
                           const s = getSlotStatus(hour)
                           return s === 'booked' || s === 'blocked'

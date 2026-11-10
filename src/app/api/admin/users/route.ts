@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth-options'
 import { prisma } from '@/lib/prisma'
+import { SYSTEM_USER_EMAIL } from '@/lib/banedagbok'
 
 export async function GET() {
   const session = await getServerSession(authOptions)
@@ -11,6 +12,7 @@ export async function GET() {
   }
 
   const users = await prisma.user.findMany({
+    where: { email: { not: SYSTEM_USER_EMAIL } },
     orderBy: { createdAt: 'desc' },
     select: {
       id: true, name: true, email: true, phone: true,

@@ -5,6 +5,7 @@ import { authOptions } from '@/lib/auth-options'
 import { prisma } from '@/lib/prisma'
 import { sendBookingConfirmationEmail } from '@/lib/email'
 import { osloDate } from '@/lib/date-utils'
+import { validateBookingRequest } from '@/lib/rooms'
 
 export async function GET() {
   const session = await getServerSession(authOptions)
@@ -36,9 +37,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Mangler felt' }, { status: 400 })
   }
 
-  if (startHour < 8 || endHour > 22 || startHour >= endHour) {
-    return NextResponse.json({ error: 'Ugyldig tidspunkt' }, { status: 400 })
-  }
+  const invalid = validateBookingRequest(roomId, date, startHour, endHour)
+  if (invalid) return NextResponse.json({ error: invalid }, { status: 400 })
 
   const startTime = osloDate(date, startHour)
   const endTime = osloDate(date, endHour)

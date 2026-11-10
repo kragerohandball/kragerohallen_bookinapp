@@ -1,7 +1,8 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
-import { TIME_SLOTS, formatTime } from '@/lib/utils'
+import { formatTime } from '@/lib/utils'
+import { ROOMS, getRoom, roomHours, isDayAllowed, allowedDaysText } from '@/lib/rooms'
 import SiteHeader from '@/components/SiteHeader'
 import { useSiteSettings } from '@/components/SiteSettingsContext'
 
@@ -16,11 +17,6 @@ type Booking = {
 }
 type Tab = 'godkjenning' | 'bookinger' | 'ny-booking' | 'blokker' | 'legg-til' | 'importer' | 'innstillinger'
 type CreatedUser = { name: string; email: string; group: string; password: string; error?: string }
-
-const ROOMS = [
-  { id: 'room-kafeen', name: 'Kaféen' },
-  { id: 'room-trykkerommet', name: 'Trykkerommet' },
-]
 
 function todayStr() { return new Date().toISOString().split('T')[0] }
 function maxDateStr() {
@@ -85,6 +81,25 @@ export default function AdminPage() {
   async function fetchBookings() {
     const res = await fetch('/api/admin/bookings')
     if (res.ok) setBookings(await res.json())
+  }
+
+  const [syncing, setSyncing] = useState(false)
+  const [syncResult, setSyncResult] = useState<string | null>(null)
+
+  async function syncMatches() {
+    setSyncing(true)
+    setSyncResult(null)
+    const res = await fetch('/api/cron/banedagbok')
+    const data = await res.json()
+    if (res.ok) {
+      const lines = [`Hentet ${data.fetched} kamper · ${data.upserted} lagt inn i hallene · ${data.removed} fjernet`]
+      for (const c of data.conflicts ?? []) lines.push(`⚠️ Kollisjon i ${c.room}: ${c.match} overlapper med ${c.existing}`)
+      setSyncResult(lines.join('\n'))
+      fetchBookings()
+    } else {
+      setSyncResult(`Feil: ${data.error ?? 'ukjent feil'}`)
+    }
+    setSyncing(false)
   }
 
   async function handleUserAction(userId: string, action: 'approve' | 'reject') {
@@ -368,6 +383,18 @@ export default function AdminPage() {
         {/* Bookinger */}
         {tab === 'bookinger' && (
           <div>
+            <div className="mb-4 flex flex-wrap items-start gap-3">
+              <button
+                onClick={syncMatches}
+                disabled={syncing}
+                className="text-black font-bold px-4 py-2 rounded-lg text-sm disabled:opacity-40"
+                style={{ backgroundColor: primaryColor }}
+              >
+                {syncing ? 'Henter kamper...' : 'Oppdater kamper fra banedagboken nå'}
+              </button>
+              <span className="text-xs text-gray-500 self-center">Skjer også automatisk hver natt.</span>
+              {syncResult && <pre className="w-full whitespace-pre-wrap text-xs text-gray-300 bg-[#111] rounded-lg p-3">{syncResult}</pre>}
+            </div>
             {bookings.length === 0 ? (
               <div className="bg-[#2a2a2a] rounded-xl border border-gray-700 p-8 text-center text-gray-500">
                 Ingen kommende bookinger
@@ -721,32 +748,44 @@ function BookingFormFields({
   end: number; setEnd: (v: number) => void
   notes: string; setNotes: (v: string) => void
 }) {
-  const ROOMS = [{ id: 'room-kafeen', name: 'Kaféen' }, { id: 'room-trykkerommet', name: 'Trykkerommet' }]
+  const roomCfg = getRoom(room) ?? ROOMS[0]
+  const hours = roomHours(roomCfg)
+
+  function changeRoom(id: string) {
+    setRoom(id)
+    const cfg = getRoom(id) ?? ROOMS[0]
+    const s = Math.min(Math.max(start, cfg.openHour), cfg.closeHour - 1)
+    setStart(s)
+    setEnd(Math.min(Math.max(end, s + 1), cfg.closeHour))
+  }
 
   const inputCls = "w-full bg-[#1a1a1a] border border-gray-600 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#FFD400] placeholder-gray-600"
   return (
     <>
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-1">Rom</label>
-        <select value={room} onChange={e => setRoom(e.target.value)} className={inputCls}>
+        <select value={room} onChange={e => changeRoom(e.target.value)} className={inputCls}>
           {ROOMS.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
         </select>
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-1">Dato</label>
         <input type="date" value={date} min={todayStr()} max={maxDateStr()} onChange={e => setDate(e.target.value)} className={inputCls} />
+        {!isDayAllowed(roomCfg, date) && (
+          <p className="text-red-400 text-xs mt-1">{roomCfg.name} kan bare bookes på {allowedDaysText(roomCfg)}.</p>
+        )}
       </div>
       <div className="flex gap-3">
         <div className="flex-1">
           <label className="block text-sm font-medium text-gray-300 mb-1">Starttid</label>
-          <select value={start} onChange={e => setStart(Number(e.target.value))} className={inputCls}>
-            {TIME_SLOTS.map(h => <option key={h} value={h}>{formatTime(h)}</option>)}
+          <select value={start} onChange={e => { const v = Number(e.target.value); setStart(v); if (end <= v) setEnd(v + 1) }} className={inputCls}>
+            {hours.map(h => <option key={h} value={h}>{formatTime(h)}</option>)}
           </select>
         </div>
         <div className="flex-1">
           <label className="block text-sm font-medium text-gray-300 mb-1">Sluttid</label>
           <select value={end} onChange={e => setEnd(Number(e.target.value))} className={inputCls}>
-            {Array.from({ length: 22 - start }, (_, i) => start + i + 1).map(h => (
+            {Array.from({ length: roomCfg.closeHour - start }, (_, i) => start + i + 1).map(h => (
               <option key={h} value={h}>{formatTime(h)}</option>
             ))}
           </select>

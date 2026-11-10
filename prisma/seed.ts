@@ -43,6 +43,13 @@ async function main() {
     },
   })
 
+  for (const r of [
+    { id: 'room-ny-hall', name: 'Ny hall', description: 'Bane 1 – kan bookes ons, fre, lør og søn hele døgnet.' },
+    { id: 'room-gammel-hall', name: 'Gammel hall', description: 'Bane 2 – kan bookes ons, fre, lør og søn hele døgnet.' },
+  ]) {
+    await prisma.room.upsert({ where: { id: r.id }, update: {}, create: { ...r, capacity: 0 } })
+  }
+
   console.log('✅ Database seeded!')
   console.log(`Admin: ${admin.email} / ${adminPassword}`)
   console.log('⚠️  Bytt adminpassord etter første innlogging!')

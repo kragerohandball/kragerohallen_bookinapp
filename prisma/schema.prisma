@@ -39,6 +39,8 @@ model Booking {
   endTime   DateTime
   notes     String?
   isBlocked Boolean  @default(false)
+  /// Satt for bookinger som er hentet automatisk (f.eks. "hbno:<kampId>:<romId>" fra banedagboken)
+  externalId String? @unique
   createdAt DateTime @default(now())
   room      Room     @relation(fields: [roomId], references: [id])
   user      User     @relation(fields: [userId], references: [id])

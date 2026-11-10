@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma'
 import { sendBookingConfirmationEmail } from '@/lib/email'
 import { hasBookingAccess } from '@/lib/access'
 import { osloDate, osloStartOfDay, osloEndOfDay } from '@/lib/date-utils'
+import { validateBookingRequest } from '@/lib/rooms'
 
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions)
@@ -26,7 +27,8 @@ export async function GET(req: Request) {
   const bookings = await prisma.booking.findMany({
     where: {
       roomId,
-      startTime: { gte: start, lte: end },
+      startTime: { lte: end },
+      endTime: { gt: start },
     },
     include: { user: { select: { name: true, group: true } } },
     orderBy: { startTime: 'asc' },
@@ -49,9 +51,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Mangler felt' }, { status: 400 })
   }
 
-  if (startHour < 8 || endHour > 22 || startHour >= endHour) {
-    return NextResponse.json({ error: 'Ugyldig tidspunkt' }, { status: 400 })
-  }
+  const invalid = validateBookingRequest(roomId, date, startHour, endHour)
+  if (invalid) return NextResponse.json({ error: invalid }, { status: 400 })
 
   const startTime = osloDate(date, startHour)
   const endTime = osloDate(date, endHour)
