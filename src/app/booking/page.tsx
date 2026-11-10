@@ -234,6 +234,15 @@ export default function BookingPage() {
             {/* Calendar for halls */}
             {isHall && (
               <section>
+                <a
+                  href="https://www.kragero.kommune.no/tjenester/kultur-idrett-og-fritid/idrett-og-friluftsliv/idrett/leie-av-lokaler-og-idrettsanlegg/tilfeldig-utleie/oversikt-over-utleie-idrettshallen/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block mb-4 rounded-xl px-5 py-4 font-bold text-black underline underline-offset-2 hover:opacity-90"
+                  style={{ backgroundColor: '#FFD400' }}
+                >
+                  Husk å sjekke tilfeldig utleie også HER ↗
+                </a>
                 <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">
                   Kalender — {selectedRoom.name} · trykk på en dag
                 </h2>
