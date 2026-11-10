@@ -16,13 +16,19 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
   const roomId = searchParams.get('roomId')
   const date = searchParams.get('date') // YYYY-MM-DD
+  const from = searchParams.get('from') ?? date // alternativt: from/to for flere dager
+  const to = searchParams.get('to') ?? date
 
-  if (!roomId || !date) {
-    return NextResponse.json({ error: 'roomId og date er påkrevd' }, { status: 400 })
+  const isDate = (s: string | null) => !!s && /^\d{4}-\d{2}-\d{2}$/.test(s)
+  if (!roomId || !isDate(from) || !isDate(to)) {
+    return NextResponse.json({ error: 'roomId og date (eller from/to) er påkrevd' }, { status: 400 })
   }
 
-  const start = osloStartOfDay(date)
-  const end = osloEndOfDay(date)
+  const start = osloStartOfDay(from!)
+  const end = osloEndOfDay(to!)
+  if (end.getTime() - start.getTime() > 100 * 24 * 3600 * 1000) {
+    return NextResponse.json({ error: 'Maks 100 dager om gangen' }, { status: 400 })
+  }
 
   const bookings = await prisma.booking.findMany({
     where: {

@@ -32,6 +32,36 @@ function isMatch(b: Booking) {
   return !!b.externalId?.startsWith('hbno:')
 }
 
+function localDateStr(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+const DAY_LIST_DAYS = 56 // 8 uker frem
+
+function upcomingDays(room: Room): string[] {
+  const days: string[] = []
+  const d = new Date()
+  for (let i = 0; i < DAY_LIST_DAYS; i++) {
+    const ds = localDateStr(d)
+    if (isDayAllowed(room, ds)) days.push(ds)
+    d.setDate(d.getDate() + 1)
+  }
+  return days
+}
+
+type DaySummary = { matches: string[]; bookedHours: number; free: boolean }
+
+function summarizeDay(bookings: Booking[], date: string, room: Room): DaySummary {
+  const dayStart = new Date(`${date}T00:00:00`).getTime()
+  const dayEnd = dayStart + 24 * 3600 * 1000
+  const onDay = bookings.filter(b => new Date(b.startTime).getTime() < dayEnd && new Date(b.endTime).getTime() > dayStart)
+  const matches = onDay
+    .filter(isMatch)
+    .map(b => /Kamp (\d{1,2}:\d{2})/.exec(b.notes ?? '')?.[1] ?? new Date(b.startTime).toLocaleTimeString('nb-NO', { hour: '2-digit', minute: '2-digit' }))
+  const bookedHours = roomHours(room).filter(h => onDay.some(b => !isMatch(b) && bookingAt([b], date, h))).length
+  return { matches, bookedHours, free: onDay.length === 0 }
+}
+
 function todayStr() {
   return new Date().toISOString().split('T')[0]
 }
@@ -56,6 +86,27 @@ export default function BookingPage() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [slotInfo, setSlotInfo] = useState<Booking | null>(null)
   const [myBookings, setMyBookings] = useState<Booking[]>([])
+  const [rangeBookings, setRangeBookings] = useState<Booking[]>([])
+  const [loadingRange, setLoadingRange] = useState(false)
+
+  const dayList = selectedRoom?.allowedWeekdays ? upcomingDays(selectedRoom) : []
+
+  const fetchRange = useCallback(async () => {
+    if (!selectedRoom?.allowedWeekdays) { setRangeBookings([]); return }
+    const days = upcomingDays(selectedRoom)
+    if (days.length === 0) return
+    setLoadingRange(true)
+    const res = await fetch(`/api/bookings?roomId=${selectedRoom.id}&from=${days[0]}&to=${days[days.length - 1]}`)
+    const data = await res.json()
+    setRangeBookings(res.ok ? data : [])
+    setLoadingRange(false)
+  }, [selectedRoom])
+
+  useEffect(() => { fetchRange() }, [fetchRange])
+
+  function selectDate(date: string) {
+    setSelectedDate(date); setSelectedStart(null); setSelectedEnd(null); setMessage(null); setSlotInfo(null)
+  }
 
   const fetchBookings = useCallback(async () => {
     if (!selectedRoom) return
@@ -154,6 +205,7 @@ export default function BookingPage() {
       setSelectedEnd(null)
       setNotes('')
       fetchBookings()
+      fetchRange()
       setMessage({ type: 'success', text: 'Booking bekreftet!' })
     } else {
       setMessage({ type: 'error', text: data.error || 'Noe gikk galt' })
@@ -166,6 +218,7 @@ export default function BookingPage() {
     await fetch(`/api/bookings/${id}`, { method: 'DELETE' })
     setMyBookings(mb => mb.filter(b => b.id !== id))
     fetchBookings()
+    fetchRange()
   }
 
   const slotColors: Record<string, string> = {
@@ -190,7 +243,7 @@ export default function BookingPage() {
               return (
                 <button
                   key={room.id}
-                  onClick={() => { setSelectedRoom(room); setSelectedStart(null); setSelectedEnd(null); setMessage(null); setSlotInfo(null) }}
+                  onClick={() => { setSelectedRoom(room); if (room.allowedWeekdays) { const d = upcomingDays(room)[0]; if (d) setSelectedDate(d) } setSelectedStart(null); setSelectedEnd(null); setMessage(null); setSlotInfo(null) }}
                   className="text-left p-4 rounded-xl border-2 transition-all bg-[#2a2a2a]"
                   style={isSelected ? { borderColor: primaryColor, backgroundColor: `${primaryColor}18` } : { borderColor: '#374151' }}
                 >
@@ -204,9 +257,51 @@ export default function BookingPage() {
 
         {selectedRoom && (
           <>
+            {/* Day list for halls */}
+            {dayList.length > 0 && (
+              <section>
+                <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">
+                  Kommende dager — {selectedRoom.name}
+                </h2>
+                {loadingRange ? (
+                  <div className="text-gray-400 text-sm py-2">Laster...</div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {dayList.map(d => {
+                      const sum = summarizeDay(rangeBookings, d, selectedRoom)
+                      const isSel = d === selectedDate
+                      const dt = new Date(`${d}T12:00:00`)
+                      return (
+                        <button
+                          key={d}
+                          onClick={() => selectDate(d)}
+                          className="text-left rounded-lg border-2 px-3 py-2 bg-[#2a2a2a] transition-all"
+                          style={isSel ? { borderColor: primaryColor, backgroundColor: `${primaryColor}18` } : { borderColor: '#374151' }}
+                        >
+                          <div className="text-sm font-semibold capitalize" style={{ color: isSel ? primaryColor : 'white' }}>
+                            {dt.toLocaleDateString('nb-NO', { weekday: 'long' })}
+                          </div>
+                          <div className="text-xs text-gray-400">{dt.toLocaleDateString('nb-NO', { day: 'numeric', month: 'long' })}</div>
+                          <div className="mt-1 space-y-0.5 text-xs">
+                            {sum.free && <div className="text-green-400">● Ledig hele dagen</div>}
+                            {sum.matches.length > 0 && (
+                              <div className="text-gray-300">● Kamp kl. {sum.matches.join(', ')}</div>
+                            )}
+                            {sum.bookedHours > 0 && (
+                              <div className="text-red-400">● Booket {sum.bookedHours} t</div>
+                            )}
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+              </section>
+            )}
+
             {/* Date selection */}
             <section>
-              <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">Velg dato</h2>
+              <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">{dayList.length > 0 ? 'Eller velg en annen dato' : 'Velg dato'}</h2>
               <input
                 type="date"
                 value={selectedDate}
