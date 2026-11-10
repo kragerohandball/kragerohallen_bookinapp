@@ -37,6 +37,24 @@ export function matchTime(b: CalBooking) {
     ?? new Date(b.startTime).toLocaleTimeString('nb-NO', { hour: '2-digit', minute: '2-digit' })
 }
 
+const TILFELDIG_UTLEIE_URL =
+  'https://www.kragero.kommune.no/tjenester/kultur-idrett-og-fritid/idrett-og-friluftsliv/idrett/leie-av-lokaler-og-idrettsanlegg/tilfeldig-utleie/oversikt-over-utleie-idrettshallen/'
+
+/** Gul boks med lenke til kommunens oversikt over tilfeldig utleie av hallen. */
+export function TilfeldigUtleieLink() {
+  return (
+    <a
+      href={TILFELDIG_UTLEIE_URL}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="block mb-4 rounded-xl px-5 py-4 font-bold text-black underline underline-offset-2 hover:opacity-90"
+      style={{ backgroundColor: '#FFD400' }}
+    >
+      Husk å sjekke tilfeldig utleie også HER ↗
+    </a>
+  )
+}
+
 const WEEKDAYS = ['Man', 'Tir', 'Ons', 'Tor', 'Fre', 'Lør', 'Søn']
 
 export default function HallCalendar({

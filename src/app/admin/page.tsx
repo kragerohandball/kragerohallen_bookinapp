@@ -5,7 +5,7 @@ import { formatTime } from '@/lib/utils'
 import { ROOMS, getRoom, roomHours, hoursFor, isDayAllowed, allowedDaysText } from '@/lib/rooms'
 import SiteHeader from '@/components/SiteHeader'
 import { useSiteSettings } from '@/components/SiteSettingsContext'
-import HallCalendar, { bookingsOnDay, localDateStr, matchTime } from '@/components/HallCalendar'
+import HallCalendar, { TilfeldigUtleieLink, bookingsOnDay, localDateStr, matchTime } from '@/components/HallCalendar'
 
 type User = {
   id: string; name: string; email: string; phone: string
@@ -443,6 +443,7 @@ export default function AdminPage() {
             )}
             {bkRoomCfg.allowedWeekdays && (
               <div className="mb-4 space-y-3">
+                <TilfeldigUtleieLink />
                 <HallCalendar
                   room={bkRoomCfg}
                   month={calMonth}
