@@ -35,5 +35,6 @@ export default withAuth(
 )
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+  // Bildefiler i /public (f.eks. logoen) må være tilgjengelige uten innlogging
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|jpeg|gif|svg|webp|ico)$).*)'],
 }
