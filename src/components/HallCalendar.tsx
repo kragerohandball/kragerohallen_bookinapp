@@ -70,8 +70,6 @@ export default function HallCalendar({
   ]
   while (cells.length % 7) cells.push(null)
 
-  const hours = roomHours(room)
-
   return (
     <div className="bg-[#2a2a2a] rounded-xl border border-gray-700 p-3 sm:p-4">
       <div className="flex items-center justify-between mb-3">
@@ -106,6 +104,7 @@ export default function HallCalendar({
           const onDay = bookingsOnDay(bookings, d)
           const matches = onDay.filter(isMatchBooking)
           const others = onDay.filter(b => !isMatchBooking(b))
+          const hours = roomHours(room, d)
           const busyHours = hours.filter(h => {
             const s = new Date(`${d}T${String(h).padStart(2, '0')}:00:00`).getTime()
             return onDay.some(b => new Date(b.startTime).getTime() < s + 3600000 && new Date(b.endTime).getTime() > s)

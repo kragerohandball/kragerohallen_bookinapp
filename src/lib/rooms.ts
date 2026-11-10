@@ -7,6 +7,8 @@ export type RoomConfig = {
   description: string
   openHour: number // første time som kan bookes (0–23)
   closeHour: number // siste sluttid (1–24)
+  /** Egne åpningstider for enkelte ukedager (0 = søndag): [fra, til]. */
+  dayHours?: Partial<Record<number, [number, number]>>
   /** Ukedager som kan bookes (0 = søndag … 6 = lørdag). Udefinert = alle dager. */
   allowedWeekdays?: number[]
   /** Bane-navn i banedagboken på handball.no, brukes til kampsynk. */
@@ -14,6 +16,7 @@ export type RoomConfig = {
 }
 
 const HALL_DAYS = [3, 5, 6, 0] // onsdag, fredag, lørdag, søndag
+const HALL_WEEKEND_HOURS: [number, number] = [9, 22] // lørdag og søndag 09–22
 
 export const ROOMS: RoomConfig[] = [
   {
@@ -36,9 +39,10 @@ export const ROOMS: RoomConfig[] = [
     id: 'room-ny-hall',
     name: 'Ny hall',
     capacity: 0,
-    description: 'Bane 1 • Ons, fre, lør og søn – hele døgnet',
+    description: 'Bane 1 • Ons og fre til kl. 22 • Lør og søn 09–22',
     openHour: 0,
-    closeHour: 24,
+    closeHour: 22,
+    dayHours: { 6: HALL_WEEKEND_HOURS, 0: HALL_WEEKEND_HOURS },
     allowedWeekdays: HALL_DAYS,
     banedagbokPlace: 'Kragerøhallen bane 1',
   },
@@ -46,9 +50,10 @@ export const ROOMS: RoomConfig[] = [
     id: 'room-gammel-hall',
     name: 'Gammel hall',
     capacity: 0,
-    description: 'Bane 2 • Ons, fre, lør og søn – hele døgnet',
+    description: 'Bane 2 • Ons og fre til kl. 22 • Lør og søn 09–22',
     openHour: 0,
-    closeHour: 24,
+    closeHour: 22,
+    dayHours: { 6: HALL_WEEKEND_HOURS, 0: HALL_WEEKEND_HOURS },
     allowedWeekdays: HALL_DAYS,
     banedagbokPlace: 'Kragerøhallen bane 2',
   },
@@ -67,8 +72,16 @@ export function isDayAllowed(room: RoomConfig, date: string): boolean {
   return !room.allowedWeekdays || room.allowedWeekdays.includes(weekdayOf(date))
 }
 
-export function roomHours(room: RoomConfig): number[] {
-  return Array.from({ length: room.closeHour - room.openHour }, (_, i) => room.openHour + i)
+/** Åpningstid for rommet en gitt dato (uten dato: standardtidene). */
+export function hoursFor(room: RoomConfig, date?: string | null): { open: number; close: number } {
+  const special = date ? room.dayHours?.[weekdayOf(date)] : undefined
+  return special ? { open: special[0], close: special[1] } : { open: room.openHour, close: room.closeHour }
+}
+
+/** Timene (starttid) som kan bookes. */
+export function roomHours(room: RoomConfig, date?: string | null): number[] {
+  const { open, close } = hoursFor(room, date)
+  return Array.from({ length: close - open }, (_, i) => open + i)
 }
 
 const DAY_NAMES = ['søndag', 'mandag', 'tirsdag', 'onsdag', 'torsdag', 'fredag', 'lørdag']
@@ -83,7 +96,10 @@ export function validateBookingRequest(roomId: string, date: string, startHour: 
   const room = getRoom(roomId)
   if (!room) return 'Ukjent rom'
   if (!Number.isInteger(startHour) || !Number.isInteger(endHour)) return 'Ugyldig tidspunkt'
-  if (startHour < room.openHour || endHour > room.closeHour || startHour >= endHour) return 'Ugyldig tidspunkt'
+  const { open, close } = hoursFor(room, date)
+  if (startHour < open || endHour > close || startHour >= endHour) {
+    return `${room.name} kan bookes ${String(open).padStart(2, '0')}:00–${String(close).padStart(2, '0')}:00 denne dagen`
+  }
   if (!isDayAllowed(room, date)) return `${room.name} kan bare bookes på ${allowedDaysText(room)}`
   return null
 }

@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { formatTime } from '@/lib/utils'
-import { ROOMS, getRoom, roomHours, isDayAllowed, allowedDaysText } from '@/lib/rooms'
+import { ROOMS, getRoom, roomHours, hoursFor, isDayAllowed, allowedDaysText } from '@/lib/rooms'
 import SiteHeader from '@/components/SiteHeader'
 import { useSiteSettings } from '@/components/SiteSettingsContext'
 import HallCalendar, { bookingsOnDay, localDateStr, matchTime } from '@/components/HallCalendar'
@@ -482,7 +482,7 @@ export default function AdminPage() {
                       <div>
                         <p className="text-xs text-gray-500 mb-2">Trykk på en ledig time for å booke:</p>
                         <div className="grid grid-cols-6 sm:grid-cols-12 gap-1.5">
-                          {roomHours(bkRoomCfg).map(h => {
+                          {roomHours(bkRoomCfg, calDay).map(h => {
                             const s0 = new Date(`${calDay}T${String(h).padStart(2, '0')}:00:00`).getTime()
                             const b = onDay.find(x => new Date(x.startTime).getTime() < s0 + 3600000 && new Date(x.endTime).getTime() > s0)
                             const past = s0 < Date.now()
@@ -870,14 +870,25 @@ function BookingFormFields({
   notes: string; setNotes: (v: string) => void
 }) {
   const roomCfg = getRoom(room) ?? ROOMS[0]
-  const hours = roomHours(roomCfg)
+  const hours = roomHours(roomCfg, date)
+  const { close } = hoursFor(roomCfg, date)
+
+  // Hold start/slutt innenfor åpningstiden når rom eller dato endres
+  useEffect(() => {
+    const { open, close: c } = hoursFor(roomCfg, date)
+    const s = Math.min(Math.max(start, open), c - 1)
+    if (s !== start) setStart(s)
+    const e = Math.min(Math.max(end, s + 1), c)
+    if (e !== end) setEnd(e)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [room, date])
 
   function changeRoom(id: string) {
     setRoom(id)
-    const cfg = getRoom(id) ?? ROOMS[0]
-    const s = Math.min(Math.max(start, cfg.openHour), cfg.closeHour - 1)
+    const { open, close: c } = hoursFor(getRoom(id) ?? ROOMS[0], date)
+    const s = Math.min(Math.max(start, open), c - 1)
     setStart(s)
-    setEnd(Math.min(Math.max(end, s + 1), cfg.closeHour))
+    setEnd(Math.min(Math.max(end, s + 1), c))
   }
 
   const inputCls = "w-full bg-[#1a1a1a] border border-gray-600 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#FFD400] placeholder-gray-600"
@@ -906,7 +917,7 @@ function BookingFormFields({
         <div className="flex-1">
           <label className="block text-sm font-medium text-gray-300 mb-1">Sluttid</label>
           <select value={end} onChange={e => setEnd(Number(e.target.value))} className={inputCls}>
-            {Array.from({ length: roomCfg.closeHour - start }, (_, i) => start + i + 1).map(h => (
+            {Array.from({ length: close - start }, (_, i) => start + i + 1).map(h => (
               <option key={h} value={h}>{formatTime(h)}</option>
             ))}
           </select>

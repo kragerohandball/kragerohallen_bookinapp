@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { formatTime } from '@/lib/utils'
-import { ROOMS, RoomConfig, roomHours, isDayAllowed, allowedDaysText } from '@/lib/rooms'
+import { ROOMS, RoomConfig, roomHours, hoursFor, isDayAllowed, allowedDaysText } from '@/lib/rooms'
 import SiteHeader from '@/components/SiteHeader'
 import { useSiteSettings } from '@/components/SiteSettingsContext'
 import HallCalendar, { monthRange, bookingsOnDay, matchTime } from '@/components/HallCalendar'
@@ -142,7 +142,7 @@ export default function BookingPage() {
         if (conflict) {
           setSelectedStart(hour)
         } else {
-          setSelectedEnd(Math.min(hour + 1, selectedRoom!.closeHour))
+          setSelectedEnd(Math.min(hour + 1, hoursFor(selectedRoom!, selectedDate).close))
         }
       }
     } else {
@@ -301,8 +301,8 @@ export default function BookingPage() {
               ) : loadingSlots ? (
                 <div className="text-gray-400 text-sm py-4">Laster...</div>
               ) : (
-                <div className={`grid gap-1.5 ${selectedRoom.closeHour - selectedRoom.openHour > 14 ? 'grid-cols-6 sm:grid-cols-12' : 'grid-cols-7 sm:grid-cols-14'}`}>
-                  {roomHours(selectedRoom).map(hour => {
+                <div className={`grid gap-1.5 ${roomHours(selectedRoom, selectedDate).length > 14 ? 'grid-cols-6 sm:grid-cols-12' : 'grid-cols-7 sm:grid-cols-14'}`}>
+                  {roomHours(selectedRoom, selectedDate).map(hour => {
                     const status = getSlotStatus(hour)
                     const booking = bookingAt(bookings, selectedDate, hour)
                     const isSelected = status === 'selected'
@@ -385,7 +385,7 @@ export default function BookingPage() {
                       className="bg-[#1a1a1a] border border-gray-600 text-white rounded-lg px-3 py-2 text-sm focus:outline-none"
                     >
                       <option value="">Velg sluttid</option>
-                      {Array.from({ length: selectedRoom.closeHour - selectedStart }, (_, i) => selectedStart + i + 1).map(h => {
+                      {Array.from({ length: hoursFor(selectedRoom, selectedDate).close - selectedStart }, (_, i) => selectedStart + i + 1).map(h => {
                         const conflict = Array.from({ length: h - selectedStart }, (_, i) => selectedStart + i).some(hour => {
                           const s = getSlotStatus(hour)
                           return s === 'booked' || s === 'blocked'
