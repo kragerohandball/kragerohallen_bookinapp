@@ -5,6 +5,7 @@ import { formatTime } from '@/lib/utils'
 import { ROOMS, RoomConfig, roomHours, isDayAllowed, allowedDaysText } from '@/lib/rooms'
 import SiteHeader from '@/components/SiteHeader'
 import { useSiteSettings } from '@/components/SiteSettingsContext'
+import HallCalendar, { monthRange, bookingsOnDay, matchTime } from '@/components/HallCalendar'
 
 type Room = RoomConfig
 type Booking = {
@@ -36,32 +37,6 @@ function localDateStr(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-const DAY_LIST_DAYS = 56 // 8 uker frem
-
-function upcomingDays(room: Room): string[] {
-  const days: string[] = []
-  const d = new Date()
-  for (let i = 0; i < DAY_LIST_DAYS; i++) {
-    const ds = localDateStr(d)
-    if (isDayAllowed(room, ds)) days.push(ds)
-    d.setDate(d.getDate() + 1)
-  }
-  return days
-}
-
-type DaySummary = { matches: string[]; bookedHours: number; free: boolean }
-
-function summarizeDay(bookings: Booking[], date: string, room: Room): DaySummary {
-  const dayStart = new Date(`${date}T00:00:00`).getTime()
-  const dayEnd = dayStart + 24 * 3600 * 1000
-  const onDay = bookings.filter(b => new Date(b.startTime).getTime() < dayEnd && new Date(b.endTime).getTime() > dayStart)
-  const matches = onDay
-    .filter(isMatch)
-    .map(b => /Kamp (\d{1,2}:\d{2})/.exec(b.notes ?? '')?.[1] ?? new Date(b.startTime).toLocaleTimeString('nb-NO', { hour: '2-digit', minute: '2-digit' }))
-  const bookedHours = roomHours(room).filter(h => onDay.some(b => !isMatch(b) && bookingAt([b], date, h))).length
-  return { matches, bookedHours, free: onDay.length === 0 }
-}
-
 function todayStr() {
   return new Date().toISOString().split('T')[0]
 }
@@ -88,19 +63,18 @@ export default function BookingPage() {
   const [myBookings, setMyBookings] = useState<Booking[]>([])
   const [rangeBookings, setRangeBookings] = useState<Booking[]>([])
   const [loadingRange, setLoadingRange] = useState(false)
-
-  const dayList = selectedRoom?.allowedWeekdays ? upcomingDays(selectedRoom) : []
+  const [calMonth, setCalMonth] = useState(() => { const d = new Date(); return localDateStr(new Date(d.getFullYear(), d.getMonth(), 1, 12)) })
+  const isHall = !!selectedRoom?.allowedWeekdays
 
   const fetchRange = useCallback(async () => {
     if (!selectedRoom?.allowedWeekdays) { setRangeBookings([]); return }
-    const days = upcomingDays(selectedRoom)
-    if (days.length === 0) return
+    const [from, to] = monthRange(calMonth)
     setLoadingRange(true)
-    const res = await fetch(`/api/bookings?roomId=${selectedRoom.id}&from=${days[0]}&to=${days[days.length - 1]}`)
+    const res = await fetch(`/api/bookings?roomId=${selectedRoom.id}&from=${from}&to=${to}`)
     const data = await res.json()
     setRangeBookings(res.ok ? data : [])
     setLoadingRange(false)
-  }, [selectedRoom])
+  }, [selectedRoom, calMonth])
 
   useEffect(() => { fetchRange() }, [fetchRange])
 
@@ -243,7 +217,7 @@ export default function BookingPage() {
               return (
                 <button
                   key={room.id}
-                  onClick={() => { setSelectedRoom(room); if (room.allowedWeekdays) { const d = upcomingDays(room)[0]; if (d) setSelectedDate(d) } setSelectedStart(null); setSelectedEnd(null); setMessage(null); setSlotInfo(null) }}
+                  onClick={() => { setSelectedRoom(room); if (room.allowedWeekdays) { const d = new Date(); setCalMonth(localDateStr(new Date(d.getFullYear(), d.getMonth(), 1, 12))); setSelectedDate('') } else if (!selectedDate) setSelectedDate(todayStr()); setSelectedStart(null); setSelectedEnd(null); setMessage(null); setSlotInfo(null) }}
                   className="text-left p-4 rounded-xl border-2 transition-all bg-[#2a2a2a]"
                   style={isSelected ? { borderColor: primaryColor, backgroundColor: `${primaryColor}18` } : { borderColor: '#374151' }}
                 >
@@ -257,51 +231,50 @@ export default function BookingPage() {
 
         {selectedRoom && (
           <>
-            {/* Day list for halls */}
-            {dayList.length > 0 && (
+            {/* Calendar for halls */}
+            {isHall && (
               <section>
                 <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">
-                  Kommende dager — {selectedRoom.name}
+                  Kalender — {selectedRoom.name} · trykk på en dag
                 </h2>
-                {loadingRange ? (
-                  <div className="text-gray-400 text-sm py-2">Laster...</div>
-                ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {dayList.map(d => {
-                      const sum = summarizeDay(rangeBookings, d, selectedRoom)
-                      const isSel = d === selectedDate
-                      const dt = new Date(`${d}T12:00:00`)
-                      return (
-                        <button
-                          key={d}
-                          onClick={() => selectDate(d)}
-                          className="text-left rounded-lg border-2 px-3 py-2 bg-[#2a2a2a] transition-all"
-                          style={isSel ? { borderColor: primaryColor, backgroundColor: `${primaryColor}18` } : { borderColor: '#374151' }}
-                        >
-                          <div className="text-sm font-semibold capitalize" style={{ color: isSel ? primaryColor : 'white' }}>
-                            {dt.toLocaleDateString('nb-NO', { weekday: 'long' })}
-                          </div>
-                          <div className="text-xs text-gray-400">{dt.toLocaleDateString('nb-NO', { day: 'numeric', month: 'long' })}</div>
-                          <div className="mt-1 space-y-0.5 text-xs">
-                            {sum.free && <div className="text-green-400">● Ledig hele dagen</div>}
-                            {sum.matches.length > 0 && (
-                              <div className="text-gray-300">● Kamp kl. {sum.matches.join(', ')}</div>
-                            )}
-                            {sum.bookedHours > 0 && (
-                              <div className="text-red-400">● Booket {sum.bookedHours} t</div>
-                            )}
-                          </div>
-                        </button>
-                      )
-                    })}
-                  </div>
-                )}
+                <HallCalendar
+                  room={selectedRoom}
+                  month={calMonth}
+                  onMonthChange={setCalMonth}
+                  bookings={rangeBookings}
+                  selectedDate={selectedDate || null}
+                  onSelectDate={selectDate}
+                  primaryColor={primaryColor}
+                  loading={loadingRange}
+                />
+              </section>
+            )}
+
+            {isHall && selectedDate && bookingsOnDay(rangeBookings, selectedDate).some(isMatch) && (
+              <section className="bg-[#2a2a2a] rounded-xl border border-gray-700 p-4">
+                <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-2">Kamper denne dagen</h2>
+                <ul className="space-y-1.5">
+                  {bookingsOnDay(rangeBookings, selectedDate).filter(isMatch).map(b => {
+                    const [title, ...rest] = (b.notes ?? '').split(' · ')
+                    return (
+                      <li key={b.id} className="text-sm">
+                        <span className="text-blue-300 font-semibold mr-2">{matchTime(b)}</span>
+                        <span className="text-white">{title}</span>
+                        <span className="text-gray-500 text-xs ml-2">{rest.filter(r => !r.startsWith('Kamp ')).join(' · ')}</span>
+                        <div className="text-xs text-gray-500">
+                          Hallen er sperret {new Date(b.startTime).toLocaleTimeString('nb-NO', { hour: '2-digit', minute: '2-digit' })}–{new Date(b.endTime).toLocaleTimeString('nb-NO', { hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                      </li>
+                    )
+                  })}
+                </ul>
               </section>
             )}
 
             {/* Date selection */}
+            {!isHall && (
             <section>
-              <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">{dayList.length > 0 ? 'Eller velg en annen dato' : 'Velg dato'}</h2>
+              <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">Velg dato</h2>
               <input
                 type="date"
                 value={selectedDate}
@@ -312,11 +285,13 @@ export default function BookingPage() {
                 style={{ '--tw-ring-color': primaryColor } as React.CSSProperties}
               />
             </section>
+            )}
 
             {/* Time slots */}
+            {selectedDate && (
             <section className="bg-white rounded-xl border border-gray-200 p-4">
               <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">
-                Ledige tider — {new Date(selectedDate + 'T12:00:00').toLocaleDateString('nb-NO', { weekday: 'long', day: 'numeric', month: 'long' })}
+                {isHall ? 'Trykk på en ledig time for å booke' : 'Ledige tider'} — {new Date(selectedDate + 'T12:00:00').toLocaleDateString('nb-NO', { weekday: 'long', day: 'numeric', month: 'long' })}
               </h2>
 
               {!isDayAllowed(selectedRoom, selectedDate) ? (
@@ -364,6 +339,7 @@ export default function BookingPage() {
                 <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-gray-200 inline-block"></span>{selectedRoom.banedagbokPlace ? 'Blokkert / kamp' : 'Blokkert'}</span>
               </div>
             </section>
+            )}
 
             {/* Slot info popup */}
             {slotInfo && (

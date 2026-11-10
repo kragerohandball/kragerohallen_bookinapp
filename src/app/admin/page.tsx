@@ -5,6 +5,7 @@ import { formatTime } from '@/lib/utils'
 import { ROOMS, getRoom, roomHours, isDayAllowed, allowedDaysText } from '@/lib/rooms'
 import SiteHeader from '@/components/SiteHeader'
 import { useSiteSettings } from '@/components/SiteSettingsContext'
+import HallCalendar, { bookingsOnDay, localDateStr, matchTime } from '@/components/HallCalendar'
 
 type User = {
   id: string; name: string; email: string; phone: string
@@ -88,6 +89,13 @@ export default function AdminPage() {
   const bkRoomCfg = getRoom(bkRoom) ?? ROOMS[0]
   const roomBookings = bookings.filter(b => b.roomId === bkRoom)
   const isMatchBooking = (b: Booking) => !!b.externalId?.startsWith('hbno:')
+  const [calMonth, setCalMonth] = useState(() => { const d = new Date(); return localDateStr(new Date(d.getFullYear(), d.getMonth(), 1, 12)) })
+  const [calDay, setCalDay] = useState<string | null>(null)
+
+  function bookFreeHour(date: string, hour: number) {
+    setNbRoom(bkRoom); setNbDate(date); setNbStart(hour); setNbEnd(hour + 1)
+    setTab('ny-booking')
+  }
   const banedagbokUrl = (() => {
     const f = new Date(), t = new Date(); t.setMonth(t.getMonth() + 2)
     const d = (x: Date) => x.toISOString().slice(0, 10)
@@ -432,6 +440,73 @@ export default function AdminPage() {
               <span className="text-xs text-gray-500 self-center">Skjer også automatisk hver natt.</span>
               {syncResult && <pre className="w-full whitespace-pre-wrap text-xs text-gray-300 bg-[#111] rounded-lg p-3">{syncResult}</pre>}
             </div>
+            )}
+            {bkRoomCfg.allowedWeekdays && (
+              <div className="mb-4 space-y-3">
+                <HallCalendar
+                  room={bkRoomCfg}
+                  month={calMonth}
+                  onMonthChange={setCalMonth}
+                  bookings={roomBookings}
+                  selectedDate={calDay}
+                  onSelectDate={setCalDay}
+                  primaryColor={primaryColor}
+                />
+                {calDay && (() => {
+                  const onDay = bookingsOnDay(roomBookings, calDay)
+                  const matches = onDay.filter(isMatchBooking)
+                  return (
+                    <div className="bg-[#2a2a2a] rounded-xl border border-gray-700 p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-semibold text-white capitalize">
+                          {new Date(`${calDay}T12:00:00`).toLocaleDateString('nb-NO', { weekday: 'long', day: 'numeric', month: 'long' })}
+                        </h3>
+                        <button onClick={() => setCalDay(null)} className="text-gray-500 hover:text-white">✕</button>
+                      </div>
+                      {matches.length > 0 ? (
+                        <ul className="space-y-1.5">
+                          {matches.map(b => {
+                            const [title, ...rest] = (b.notes ?? '').split(' · ')
+                            return (
+                              <li key={b.id} className="text-sm">
+                                <span className="text-blue-300 font-semibold mr-2">{matchTime(b)}</span>
+                                <span className="text-white">{title}</span>
+                                <span className="text-gray-500 text-xs ml-2">{rest.filter(r => !r.startsWith('Kamp ')).join(' · ')}</span>
+                              </li>
+                            )
+                          })}
+                        </ul>
+                      ) : (
+                        <p className="text-sm text-gray-400">Ingen kamper denne dagen.</p>
+                      )}
+                      <div>
+                        <p className="text-xs text-gray-500 mb-2">Trykk på en ledig time for å booke:</p>
+                        <div className="grid grid-cols-6 sm:grid-cols-12 gap-1.5">
+                          {roomHours(bkRoomCfg).map(h => {
+                            const s0 = new Date(`${calDay}T${String(h).padStart(2, '0')}:00:00`).getTime()
+                            const b = onDay.find(x => new Date(x.startTime).getTime() < s0 + 3600000 && new Date(x.endTime).getTime() > s0)
+                            const past = s0 < Date.now()
+                            const cls = b
+                              ? isMatchBooking(b) ? 'bg-blue-900/60 text-blue-200 border-blue-800' : 'bg-red-900/50 text-red-300 border-red-800'
+                              : past ? 'bg-transparent text-gray-600 border-gray-800' : 'bg-green-900/40 text-green-300 border-green-800 hover:bg-green-800/60 cursor-pointer'
+                            return (
+                              <button
+                                key={h}
+                                disabled={!!b || past}
+                                onClick={() => bookFreeHour(calDay, h)}
+                                className={`rounded-lg border text-center py-2 text-xs font-medium ${cls}`}
+                                title={b ? (isMatchBooking(b) ? b.notes ?? 'Kamp' : `${b.user.name}${b.notes ? ` – ${b.notes}` : ''}`) : past ? 'Passert' : 'Ledig – trykk for å booke'}
+                              >
+                                {formatTime(h)}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })()}
+              </div>
             )}
             {roomBookings.length === 0 ? (
               <div className="bg-[#2a2a2a] rounded-xl border border-gray-700 p-8 text-center text-gray-500">
