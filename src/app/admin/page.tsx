@@ -12,7 +12,8 @@ type User = {
   bookingAccess: boolean; kamperAccess: boolean
 }
 type Booking = {
-  id: string; startTime: string; endTime: string; notes?: string; isBlocked: boolean
+  id: string; roomId: string; startTime: string; endTime: string; notes?: string; isBlocked: boolean
+  externalId?: string | null
   room: { name: string }; user: { name: string; email: string; group: string }
 }
 type Tab = 'godkjenning' | 'bookinger' | 'ny-booking' | 'blokker' | 'legg-til' | 'importer' | 'innstillinger'
@@ -82,6 +83,16 @@ export default function AdminPage() {
     const res = await fetch('/api/admin/bookings')
     if (res.ok) setBookings(await res.json())
   }
+
+  const [bkRoom, setBkRoom] = useState(ROOMS[0].id)
+  const bkRoomCfg = getRoom(bkRoom) ?? ROOMS[0]
+  const roomBookings = bookings.filter(b => b.roomId === bkRoom)
+  const isMatchBooking = (b: Booking) => !!b.externalId?.startsWith('hbno:')
+  const banedagbokUrl = (() => {
+    const f = new Date(), t = new Date(); t.setMonth(t.getMonth() + 2)
+    const d = (x: Date) => x.toISOString().slice(0, 10)
+    return `https://www.handball.no/system/banedagbok/?venueUnitId=4248&fom=${d(f)}&tom=${d(t)}&ids=4248`
+  })()
 
   const [syncing, setSyncing] = useState(false)
   const [syncResult, setSyncResult] = useState<string | null>(null)
@@ -383,7 +394,33 @@ export default function AdminPage() {
         {/* Bookinger */}
         {tab === 'bookinger' && (
           <div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+              {ROOMS.map(r => {
+                const sel = r.id === bkRoom
+                const count = bookings.filter(b => b.roomId === r.id).length
+                return (
+                  <button
+                    key={r.id}
+                    onClick={() => setBkRoom(r.id)}
+                    className="text-left rounded-xl border-2 px-4 py-3 bg-[#2a2a2a] transition-all"
+                    style={sel ? { borderColor: primaryColor, backgroundColor: `${primaryColor}18` } : { borderColor: '#374151' }}
+                  >
+                    <div className="font-semibold" style={{ color: sel ? primaryColor : 'white' }}>{r.name}</div>
+                    <div className="text-xs text-gray-400">{count} kommende</div>
+                  </button>
+                )
+              })}
+            </div>
+            {bkRoomCfg.banedagbokPlace && (
             <div className="mb-4 flex flex-wrap items-start gap-3">
+              <a
+                href={banedagbokUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="border border-gray-600 text-white px-4 py-2 rounded-lg text-sm hover:border-gray-400"
+              >
+                Åpne banedagboken på handball.no ↗
+              </a>
               <button
                 onClick={syncMatches}
                 disabled={syncing}
@@ -395,41 +432,50 @@ export default function AdminPage() {
               <span className="text-xs text-gray-500 self-center">Skjer også automatisk hver natt.</span>
               {syncResult && <pre className="w-full whitespace-pre-wrap text-xs text-gray-300 bg-[#111] rounded-lg p-3">{syncResult}</pre>}
             </div>
-            {bookings.length === 0 ? (
+            )}
+            {roomBookings.length === 0 ? (
               <div className="bg-[#2a2a2a] rounded-xl border border-gray-700 p-8 text-center text-gray-500">
-                Ingen kommende bookinger
+                Ingen kommende bookinger i {bkRoomCfg.name}
               </div>
             ) : (
               <div className="bg-[#2a2a2a] rounded-xl border border-gray-700 overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="bg-[#111] border-b border-gray-700">
                     <tr>
-                      <th className="text-left px-4 py-2 font-medium text-gray-400">Rom</th>
                       <th className="text-left px-4 py-2 font-medium text-gray-400">Tid</th>
-                      <th className="text-left px-4 py-2 font-medium text-gray-400 hidden sm:table-cell">Bruker</th>
-                      <th className="text-left px-4 py-2 font-medium text-gray-400 hidden md:table-cell">Gruppe</th>
+                      <th className="text-left px-4 py-2 font-medium text-gray-400">{bkRoomCfg.banedagbokPlace ? 'Kamp / bruker' : 'Bruker'}</th>
+                      <th className="text-left px-4 py-2 font-medium text-gray-400 hidden md:table-cell">{bkRoomCfg.banedagbokPlace ? 'Detaljer' : 'Gruppe'}</th>
                       <th className="px-4 py-2"></th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-700">
-                    {bookings.map(b => (
+                    {roomBookings.map(b => {
+                      const match = isMatchBooking(b)
+                      const [matchTitle, ...matchDetails] = (b.notes ?? '').split(' · ')
+                      return (
                       <tr key={b.id} className={b.isBlocked ? 'bg-[#111]' : ''}>
-                        <td className="px-4 py-2 font-medium text-white">
-                          {b.room.name}
-                          {b.isBlocked && <span className="ml-2 text-xs bg-gray-700 text-gray-400 px-1.5 py-0.5 rounded">blokkert</span>}
-                        </td>
                         <td className="px-4 py-2 text-gray-400 whitespace-nowrap">
-                          {new Date(b.startTime).toLocaleDateString('nb-NO', { day: 'numeric', month: 'short' })}{' '}
+                          <span className="capitalize">{new Date(b.startTime).toLocaleDateString('nb-NO', { weekday: 'short', day: 'numeric', month: 'short' })}</span>{' '}
                           {new Date(b.startTime).toLocaleTimeString('nb-NO', { hour: '2-digit', minute: '2-digit' })}–
                           {new Date(b.endTime).toLocaleTimeString('nb-NO', { hour: '2-digit', minute: '2-digit' })}
                         </td>
-                        <td className="px-4 py-2 text-gray-400 hidden sm:table-cell">{b.user.name}</td>
-                        <td className="px-4 py-2 text-gray-500 hidden md:table-cell">{b.user.group}</td>
+                        <td className="px-4 py-2 text-white">
+                          {match ? matchTitle : b.isBlocked ? (b.notes || 'Blokkert') : b.user.name}
+                          {match
+                            ? <span className="ml-2 text-xs bg-blue-900 text-blue-300 px-1.5 py-0.5 rounded">kamp</span>
+                            : b.isBlocked && <span className="ml-2 text-xs bg-gray-700 text-gray-400 px-1.5 py-0.5 rounded">blokkert</span>}
+                        </td>
+                        <td className="px-4 py-2 text-gray-500 hidden md:table-cell">
+                          {match ? matchDetails.join(' · ') : b.isBlocked ? '' : [b.user.group, b.notes].filter(Boolean).join(' · ')}
+                        </td>
                         <td className="px-4 py-2 text-right">
-                          <button onClick={() => handleCancelBooking(b.id)} className="text-red-400 hover:text-red-300 text-xs">Kanseller</button>
+                          {match
+                            ? <span className="text-xs text-gray-600">fra banedagbok</span>
+                            : <button onClick={() => handleCancelBooking(b.id)} className="text-red-400 hover:text-red-300 text-xs">Kanseller</button>}
                         </td>
                       </tr>
-                    ))}
+                      )
+                    })}
                   </tbody>
                 </table>
               </div>
