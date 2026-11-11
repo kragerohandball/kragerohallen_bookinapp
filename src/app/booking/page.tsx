@@ -63,6 +63,20 @@ export default function BookingPage() {
   const [myBookings, setMyBookings] = useState<Booking[]>([])
   const [rangeBookings, setRangeBookings] = useState<Booking[]>([])
   const [loadingRange, setLoadingRange] = useState(false)
+  const [syncing, setSyncing] = useState(false)
+
+  const banedagbokUrl = (() => {
+    const f = new Date(), t = new Date(); t.setMonth(t.getMonth() + 2)
+    const d = (x: Date) => x.toISOString().slice(0, 10)
+    return `https://www.handball.no/system/banedagbok/?venueUnitId=4248&fom=${d(f)}&tom=${d(t)}&ids=4248`
+  })()
+
+  async function syncMatches() {
+    setSyncing(true)
+    await fetch('/api/cron/banedagbok')
+    setSyncing(false)
+    fetchBookings()
+  }
   const [calMonth, setCalMonth] = useState(() => { const d = new Date(); return localDateStr(new Date(d.getFullYear(), d.getMonth(), 1, 12)) })
   const isHall = !!selectedRoom?.allowedWeekdays
 
@@ -340,6 +354,28 @@ export default function BookingPage() {
                 <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-gray-200 inline-block"></span>{selectedRoom.banedagbokPlace ? 'Blokkert / kamp' : 'Blokkert'}</span>
               </div>
             </section>
+            )}
+
+            {/* Banedagbok-knapp (kun for rom med kampplan) */}
+            {selectedRoom?.banedagbokPlace && selectedDate && (
+              <div className="flex flex-wrap items-center gap-3">
+                <a
+                  href={banedagbokUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="border border-gray-600 text-white px-4 py-2 rounded-lg text-sm hover:border-gray-400"
+                >
+                  Åpne banedagboken på handball.no ↗
+                </a>
+                <button
+                  onClick={syncMatches}
+                  disabled={syncing}
+                  className="text-black font-bold px-4 py-2 rounded-lg text-sm disabled:opacity-40"
+                  style={{ backgroundColor: primaryColor }}
+                >
+                  {syncing ? 'Henter kamper...' : 'Oppdater kamper fra banedagboken'}
+                </button>
+              </div>
             )}
 
             {/* Slot info popup */}

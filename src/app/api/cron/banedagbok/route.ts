@@ -13,8 +13,8 @@ export async function GET(req: Request) {
 
   if (!fromCron) {
     const session = await getServerSession(authOptions)
-    if (session?.user?.role !== 'ADMIN') {
-      return NextResponse.json({ error: 'Ikke tilgang' }, { status: 401 })
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Ikke innlogget' }, { status: 401 })
     }
   }
 
