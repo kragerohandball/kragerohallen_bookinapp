@@ -16,11 +16,18 @@ export type RoomConfig = {
 }
 
 const HALL_DAYS = [3, 5, 6, 0] // onsdag, fredag, lørdag, søndag
-const HALL_HOURS: Partial<Record<number, [number, number]>> = {
+const NY_HALL_HOURS: Partial<Record<number, [number, number]>> = {
   3: [18, 22], // onsdag 18–22
   5: [17, 22], // fredag 17–22
-  6: [9, 22], // lørdag 09–22
-  0: [9, 22], // søndag 09–22
+  6: [9, 22],  // lørdag 09–22
+  0: [9, 22],  // søndag 09–22
+}
+
+const GAMMEL_HALL_HOURS: Partial<Record<number, [number, number]>> = {
+  3: [20, 22], // onsdag 20–22
+  5: [20, 22], // fredag 20–22
+  6: [20, 22], // lørdag 20–22
+  0: [20, 22], // søndag 20–22
 }
 
 export const ROOMS: RoomConfig[] = [
@@ -47,7 +54,7 @@ export const ROOMS: RoomConfig[] = [
     description: 'Bane 1 • Ons 18–22 • Fre 17–22 • Lør og søn 09–22',
     openHour: 0,
     closeHour: 22,
-    dayHours: HALL_HOURS,
+    dayHours: NY_HALL_HOURS,
     allowedWeekdays: HALL_DAYS,
     banedagbokPlace: 'Kragerøhallen bane 1',
   },
@@ -55,10 +62,10 @@ export const ROOMS: RoomConfig[] = [
     id: 'room-gammel-hall',
     name: 'Gammel hall',
     capacity: 0,
-    description: 'Bane 2 • Ons 18–22 • Fre 17–22 • Lør og søn 09–22',
+    description: 'Bane 2 • Ons, Fre, Lør og søn 20–22',
     openHour: 0,
     closeHour: 22,
-    dayHours: HALL_HOURS,
+    dayHours: GAMMEL_HALL_HOURS,
     allowedWeekdays: HALL_DAYS,
     banedagbokPlace: 'Kragerøhallen bane 2',
   },
