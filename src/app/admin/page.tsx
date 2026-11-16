@@ -93,7 +93,7 @@ export default function AdminPage() {
   const [calDay, setCalDay] = useState<string | null>(null)
 
   function bookFreeHour(date: string, hour: number) {
-    setNbRoom(bkRoom); setNbDate(date); setNbStart(hour); setNbEnd(hour + 1)
+    setNbRoom(bkRoom); setNbDate(date); setNbStart(hour); setNbEnd(hour + 0.5)
     setTab('ny-booking')
   }
   const banedagbokUrl = (() => {
@@ -482,10 +482,11 @@ export default function AdminPage() {
                       )}
                       <div>
                         <p className="text-xs text-gray-500 mb-2">Trykk på en ledig time for å booke:</p>
-                        <div className="grid grid-cols-6 sm:grid-cols-12 gap-1.5">
+                        <div className="grid grid-cols-7 sm:grid-cols-14 gap-1.5">
                           {roomHours(bkRoomCfg, calDay).map(h => {
-                            const s0 = new Date(`${calDay}T${String(h).padStart(2, '0')}:00:00`).getTime()
-                            const b = onDay.find(x => new Date(x.startTime).getTime() < s0 + 3600000 && new Date(x.endTime).getTime() > s0)
+                            const hh = Math.floor(h), mm = h % 1 >= 0.5 ? '30' : '00'
+                            const s0 = new Date(`${calDay}T${String(hh).padStart(2, '0')}:${mm}:00`).getTime()
+                            const b = onDay.find(x => new Date(x.startTime).getTime() < s0 + 1800000 && new Date(x.endTime).getTime() > s0)
                             const past = s0 < Date.now()
                             const cls = b
                               ? isMatchBooking(b) ? 'bg-blue-900/60 text-blue-200 border-blue-800' : 'bg-red-900/50 text-red-300 border-red-800'
@@ -877,9 +878,9 @@ function BookingFormFields({
   // Hold start/slutt innenfor åpningstiden når rom eller dato endres
   useEffect(() => {
     const { open, close: c } = hoursFor(roomCfg, date)
-    const s = Math.min(Math.max(start, open), c - 1)
+    const s = Math.min(Math.max(start, open), c - 0.5)
     if (s !== start) setStart(s)
-    const e = Math.min(Math.max(end, s + 1), c)
+    const e = Math.min(Math.max(end, s + 0.5), c)
     if (e !== end) setEnd(e)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [room, date])
@@ -889,7 +890,7 @@ function BookingFormFields({
     const { open, close: c } = hoursFor(getRoom(id) ?? ROOMS[0], date)
     const s = Math.min(Math.max(start, open), c - 1)
     setStart(s)
-    setEnd(Math.min(Math.max(end, s + 1), c))
+    setEnd(Math.min(Math.max(end, s + 0.5), c))
   }
 
   const inputCls = "w-full bg-[#1a1a1a] border border-gray-600 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#FFD400] placeholder-gray-600"
@@ -911,14 +912,14 @@ function BookingFormFields({
       <div className="flex gap-3">
         <div className="flex-1">
           <label className="block text-sm font-medium text-gray-300 mb-1">Starttid</label>
-          <select value={start} onChange={e => { const v = Number(e.target.value); setStart(v); if (end <= v) setEnd(v + 1) }} className={inputCls}>
+          <select value={start} onChange={e => { const v = Number(e.target.value); setStart(v); if (end <= v) setEnd(v + 0.5) }} className={inputCls}>
             {hours.map(h => <option key={h} value={h}>{formatTime(h)}</option>)}
           </select>
         </div>
         <div className="flex-1">
           <label className="block text-sm font-medium text-gray-300 mb-1">Sluttid</label>
           <select value={end} onChange={e => setEnd(Number(e.target.value))} className={inputCls}>
-            {Array.from({ length: close - start }, (_, i) => start + i + 1).map(h => (
+            {Array.from({ length: (close - start) * 2 }, (_, i) => start + (i + 1) * 0.5).map(h => (
               <option key={h} value={h}>{formatTime(h)}</option>
             ))}
           </select>
