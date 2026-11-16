@@ -124,8 +124,9 @@ export default function HallCalendar({
           const others = onDay.filter(b => !isMatchBooking(b))
           const hours = roomHours(room, d)
           const busyHours = hours.filter(h => {
-            const s = new Date(`${d}T${String(h).padStart(2, '0')}:00:00`).getTime()
-            return onDay.some(b => new Date(b.startTime).getTime() < s + 3600000 && new Date(b.endTime).getTime() > s)
+            const hh = Math.floor(h), mm = h % 1 >= 0.5 ? '30' : '00'
+            const s = new Date(`${d}T${String(hh).padStart(2, '0')}:${mm}:00`).getTime()
+            return onDay.some(b => new Date(b.startTime).getTime() < s + 1800000 && new Date(b.endTime).getTime() > s)
           }).length
           const full = busyHours >= hours.length
           const sel = d === selectedDate

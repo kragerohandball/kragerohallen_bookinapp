@@ -17,5 +17,7 @@ export function toLocalDateString(date: Date): string {
 }
 
 export function formatTime(hour: number): string {
-  return `${String(hour).padStart(2, '0')}:00`
+  const h = Math.floor(hour)
+  const m = hour % 1 >= 0.5 ? '30' : '00'
+  return `${String(h).padStart(2, '0')}:${m}`
 }

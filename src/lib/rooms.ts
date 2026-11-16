@@ -90,10 +90,10 @@ export function hoursFor(room: RoomConfig, date?: string | null): { open: number
   return special ? { open: special[0], close: special[1] } : { open: room.openHour, close: room.closeHour }
 }
 
-/** Timene (starttid) som kan bookes. */
+/** Halvtimene (starttid) som kan bookes. */
 export function roomHours(room: RoomConfig, date?: string | null): number[] {
   const { open, close } = hoursFor(room, date)
-  return Array.from({ length: close - open }, (_, i) => open + i)
+  return Array.from({ length: (close - open) * 2 }, (_, i) => open + i * 0.5)
 }
 
 const DAY_NAMES = ['søndag', 'mandag', 'tirsdag', 'onsdag', 'torsdag', 'fredag', 'lørdag']
@@ -107,7 +107,9 @@ export function allowedDaysText(room: RoomConfig): string {
 export function validateBookingRequest(roomId: string, date: string, startHour: number, endHour: number): string | null {
   const room = getRoom(roomId)
   if (!room) return 'Ukjent rom'
-  if (!Number.isInteger(startHour) || !Number.isInteger(endHour)) return 'Ugyldig tidspunkt'
+  if (isNaN(startHour) || isNaN(endHour)) return 'Ugyldig tidspunkt'
+  // Kun hele eller halve timer tillatt
+  if ((startHour * 2) % 1 !== 0 || (endHour * 2) % 1 !== 0) return 'Ugyldig tidspunkt'
   const { open, close } = hoursFor(room, date)
   if (startHour < open || endHour > close || startHour >= endHour) {
     return `${room.name} kan bookes ${String(open).padStart(2, '0')}:00–${String(close).padStart(2, '0')}:00 denne dagen`

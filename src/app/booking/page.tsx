@@ -20,8 +20,10 @@ type Booking = {
 }
 
 function slotRange(date: string, hour: number): [number, number] {
-  const start = new Date(`${date}T${String(hour).padStart(2, '0')}:00:00`).getTime()
-  return [start, start + 60 * 60 * 1000]
+  const h = Math.floor(hour)
+  const m = hour % 1 >= 0.5 ? '30' : '00'
+  const start = new Date(`${date}T${String(h).padStart(2, '0')}:${m}:00`).getTime()
+  return [start, start + 30 * 60 * 1000]
 }
 
 function bookingAt(bookings: Booking[], date: string, hour: number): Booking | undefined {
@@ -156,7 +158,7 @@ export default function BookingPage() {
         if (conflict) {
           setSelectedStart(hour)
         } else {
-          setSelectedEnd(Math.min(hour + 1, hoursFor(selectedRoom!, selectedDate).close))
+          setSelectedEnd(Math.min(hour + 0.5, hoursFor(selectedRoom!, selectedDate).close))
         }
       }
     } else {
@@ -316,7 +318,7 @@ export default function BookingPage() {
               ) : loadingSlots ? (
                 <div className="text-gray-400 text-sm py-4">Laster...</div>
               ) : (
-                <div className={`grid gap-1.5 ${roomHours(selectedRoom, selectedDate).length > 14 ? 'grid-cols-6 sm:grid-cols-12' : 'grid-cols-7 sm:grid-cols-14'}`}>
+                <div className={`grid gap-1.5 ${roomHours(selectedRoom, selectedDate).length > 8 ? 'grid-cols-7 sm:grid-cols-14' : 'grid-cols-4 sm:grid-cols-8'}`}>
                   {roomHours(selectedRoom, selectedDate).map(hour => {
                     const status = getSlotStatus(hour)
                     const booking = bookingAt(bookings, selectedDate, hour)
@@ -422,12 +424,11 @@ export default function BookingPage() {
                       className="bg-[#1a1a1a] border border-gray-600 text-white rounded-lg px-3 py-2 text-sm focus:outline-none"
                     >
                       <option value="">Velg sluttid</option>
-                      {Array.from({ length: hoursFor(selectedRoom, selectedDate).close - selectedStart }, (_, i) => selectedStart + i + 1).map(h => {
-                        const conflict = Array.from({ length: h - selectedStart }, (_, i) => selectedStart + i).some(hour => {
-                          const s = getSlotStatus(hour)
-                          return s === 'booked' || s === 'blocked'
-                        })
-                        if (conflict && h > selectedStart + 1) return null
+                      {Array.from({ length: (hoursFor(selectedRoom, selectedDate).close - selectedStart) * 2 }, (_, i) => selectedStart + (i + 1) * 0.5).map(h => {
+                        const slots: number[] = []
+                        for (let s = selectedStart; s < h; s += 0.5) slots.push(s)
+                        const conflict = slots.some(slot => { const st = getSlotStatus(slot); return st === 'booked' || st === 'blocked' })
+                        if (conflict && h > selectedStart + 0.5) return null
                         return (
                           <option key={h} value={h}>{formatTime(h)}</option>
                         )
@@ -439,7 +440,7 @@ export default function BookingPage() {
                 {selectedEnd !== null && (
                   <div className="rounded-lg px-4 py-2 text-sm" style={{ backgroundColor: `${primaryColor}18`, border: `1px solid ${primaryColor}40`, color: primaryColor }}>
                     {selectedRoom.name} • {formatTime(selectedStart)}–{formatTime(selectedEnd)} •{' '}
-                    {selectedEnd - selectedStart} time{selectedEnd - selectedStart > 1 ? 'r' : ''}
+                    {(() => { const dur = selectedEnd - selectedStart; const h = Math.floor(dur); const m = dur % 1 >= 0.5 ? 30 : 0; return h > 0 && m > 0 ? `${h}t 30min` : h > 0 ? `${h} time${h > 1 ? 'r' : ''}` : '30 min' })()}
                   </div>
                 )}
 
